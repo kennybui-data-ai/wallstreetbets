@@ -2,7 +2,8 @@
 to the moon baby 🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🌙
 
 # setup
-Install virtualenvwrapper (windows: virtualenvwrapper-win)
+`pip install virtualenvwrapper` _(optional)_
+Windows is virtualenvwrapper-win
 - if using Linux, refer to `venvsetup.sh`
 - command shortlist ([docs](https://virtualenvwrapper.readthedocs.io/en/latest/command_ref.html)):
 ```
