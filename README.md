@@ -1,5 +1,5 @@
 # wallstreetbets
-only💎👐allowed🚀🌙
+[only💎👐allowed🚀🌙](https://brrr.money/)
 
 # setup
 `pip install virtualenvwrapper` _(optional)_  
