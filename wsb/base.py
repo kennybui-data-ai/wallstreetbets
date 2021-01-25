@@ -25,7 +25,7 @@ class ModelBase:
         :param output: output folder
         :type output: str
         :param sort: Can be one of: relevance, hot, top, new, comments. (default: hot)
-        :type sort: str or list
+        :type sort: str
         :param search_query: search in subreddit
         :type search_query: str
         """
@@ -46,6 +46,7 @@ class ModelBase:
         """get all submissions that match the attributes
 
         :param sort: sort type for search, optional
+        :type sort: str
         :param comments: include comments, optional
         :type comments: bool
         """
@@ -54,14 +55,21 @@ class ModelBase:
 
         # https://praw.readthedocs.io/en/latest/code_overview/models/subreddit.html?highlight=subreddit#praw.models.Subreddit.search
         search_kwargs = {
-            "query": self.search_query,
-            "sort": sort if sort else self.sort,
             "time_filter": self.timefilter,
             "limit": self.limit
         }
+        if self.search_query:
+            search = self.subreddit.search
+            search_kwargs["sort"] = self.sort
+            search_kwargs["query"] = self.search_query
+        else:
+            # would be one of the other methods: hot, top, new
+            search = getattr(self.subreddit, sort)
+            if sort in ["new", "hot"]:
+                search_kwargs.pop("time_filter")
 
         data = []
-        for submission in self.subreddit.search(**search_kwargs):
+        for submission in search(**search_kwargs):
             row = {
                 "title": submission.title,
                 "upvote_ratio": submission.upvote_ratio,
@@ -89,10 +97,4 @@ class ModelBase:
             data.append(row)
 
         df = pd.DataFrame(data)
-        # save it to csv
-        output_path = self.output
-        df.to_csv(
-            output_path,
-            # sep="|"
-        )
-        return df, output_path
+        return df, self.output

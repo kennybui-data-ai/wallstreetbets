@@ -2,7 +2,7 @@
 # idea is each model might potentially implement unique way of analyzing the data
 # also want to support NLP sentiment analysis in the future
 
-from base import ModelBase
+from base import ModelBase, pd
 
 
 class DueDiligence(ModelBase):
@@ -75,7 +75,13 @@ class StockTicker(ModelBase):
         """
         print("Stock Ticker")
         all_dfs = []
-        for sort in ["relevance", "hot", "top", "new"]:
+        for sort in ["hot", "top", "new", "controversial"]:
             df, output_path = self.submissions(sort=sort)
             all_dfs.append(df)
+
+        final_df = pd.concat(all_dfs)
+        final_df.to_csv(
+            output_path,
+            # sep="|"
+        )
         pass
