@@ -1,6 +1,7 @@
 import praw
-from . import models
+import models
 import argparse
+from datetime import datetime
 
 
 class MoneyPrinter:
@@ -23,10 +24,41 @@ class MoneyPrinter:
         pass
 
     def go_brrr(self):
-        """ print the tendies
+        """ pump out them tendies
         """
+        print("BRRRRRR")
         pass
 
 
-if __name__ == "__main__":
-    pass
+def parse_args():
+    """function for command line args
+    TODO
+    """
+    parser = argparse.ArgumentParser(
+        description='Money Printer Go BRRR')
+    parser.add_argument('-sd', '--startdate', type=str, default=datetime.today().strftime('%Y%m%d'),
+                        help='YYYYMMDD. Default is datetime.today()')
+    parser.add_argument('-t', '--ticker', action='store_true',
+                        help='Ticker model. Default is False')
+    parser.add_argument('-dd', '--dailydiscussion', action='store_true',
+                        help='Daily Discussion model. Default is False')
+    # parser.add_argument('--fresh', action='store_true',
+    #                     help='Regenerate (ie - delete and create) fresh 3_output scripts. Default is False')
+    # parser.add_argument('--sum', dest='accumulate', action='store_const',
+    #                     const=sum, default=max,
+    #                     help='sum the integers (default: find the max)')
+
+    return parser.parse_args()
+
+# if __name__ == "__main__":
+#     args = parse_args()
+#     for arg in vars(args):
+#         print arg, getattr(args, arg)
+
+#     mp = MoneyPrinter()
+#     mp.go_brrr()
+
+reddit = praw.Reddit(client_id="CLIENT_ID", client_secret="CLIENT_SECRET",
+                     password="PASSWORD", user_agent="USERAGENT",
+                     username="USERNAME")
+reddit.subreddit("r/wallstreetbets")
