@@ -1,33 +1,60 @@
 import praw
+# import sys
 import models
 import argparse
 from datetime import datetime
+import json
 
 
 class MoneyPrinter:
     """BRRRRRRRRRRRRRRRRR
     """
 
-    def __init__(self):
+    def __init__(self, credentials_path):
         """init the print
+
+        :param credentials_path: path to OAuth2.0 credentials for Reddit API
+        :type credentials_path: str
         """
-        pass
+        with open(credentials_path, "r") as f:
+            self.credentials = json.loads(f.read())
+
+        self.reddit = praw.Reddit(client_id=self.credentials["client_id"],
+                                  client_secret=self.credentials["client_secret"],
+                                  refresh_token=self.credentials["refresh_token"],
+                                  user_agent=self.credentials["user_agent"]
+                                  )
+        self.subreddit = self.reddit.subreddit("wallstreetbets")
+        self.dailydiscussion = models.DailyDiscussion(self.subreddit)
+        self.ticker = models.Ticker(self.subreddit)
 
     def pump(self):
-        """ extract posts
+        """test
         """
-        pass
+        print(self.subreddit.display_name)
+        print(self.subreddit.title)
+        print(self.subreddit.description)
+        for submission in self.subreddit.hot(limit=10):
+            print(submission.title)
+            print(submission.score)
+            print(submission.id)
+            print(submission.url)
 
-    def tendies(self):
-        """ mine the posts using the models
-        """
-        pass
-
-    def go_brrr(self):
+    def go_brrr(self, args):
         """ pump out them tendies
+
+        :param args: cmdline args
+        :type args: argparse obj
         """
+        self.pump()
+
+        if args.dailydiscussion:
+            self.dailydiscussion.tendies()
+
+        if args.ticker:
+            self.ticker.tendies()
+
         print("BRRRRRR")
-        pass
 
 
 def parse_args():
@@ -50,15 +77,12 @@ def parse_args():
 
     return parser.parse_args()
 
-# if __name__ == "__main__":
-#     args = parse_args()
-#     for arg in vars(args):
-#         print arg, getattr(args, arg)
 
-#     mp = MoneyPrinter()
-#     mp.go_brrr()
+if __name__ == "__main__":
+    args = parse_args()
+    for arg in vars(args):
+        print(arg, getattr(args, arg))
 
-reddit = praw.Reddit(client_id="CLIENT_ID", client_secret="CLIENT_SECRET",
-                     password="PASSWORD", user_agent="USERAGENT",
-                     username="USERNAME")
-reddit.subreddit("r/wallstreetbets")
+    credentials_path = "./credentials.json"
+    mp = MoneyPrinter(credentials_path)
+    mp.go_brrr(args)
