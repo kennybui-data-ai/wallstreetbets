@@ -25,7 +25,7 @@ class ModelBase:
         :param output: output folder
         :type output: str
         :param sort: Can be one of: relevance, hot, top, new, comments. (default: hot)
-        :type sort: str
+        :type sort: str or list
         :param search_query: search in subreddit
         :type search_query: str
         """
@@ -36,31 +36,32 @@ class ModelBase:
         self._output = output
         self.search_query = search_query
 
-        # https://praw.readthedocs.io/en/latest/code_overview/models/subreddit.html?highlight=subreddit#praw.models.Subreddit.search
-        self.search_kwargs = {
-            "query": self.search_query,
-            "sort": self.sort,
-            "time_filter": self.timefilter,
-            "limit": self.limit
-        }
-
     @property
     def output(self):
         datestr = dt.now().strftime("%Y%m%d_%H%M%S")
         file_prefix = self.search_query.replace(":", "_")
         return f"{self._output}/{file_prefix}_{datestr}.csv"
 
-    def submissions(self, comments=False):
+    def submissions(self, sort=None, comments=False):
         """get all submissions that match the attributes
 
-        :param comments: include comments or not
+        :param sort: sort type for search, optional
+        :param comments: include comments, optional
         :type comments: bool
         """
         pp.pprint(["{}: {}".format(a, getattr(self, a)) for a in vars(self)]
                   )
 
+        # https://praw.readthedocs.io/en/latest/code_overview/models/subreddit.html?highlight=subreddit#praw.models.Subreddit.search
+        search_kwargs = {
+            "query": self.search_query,
+            "sort": sort if sort else self.sort,
+            "time_filter": self.timefilter,
+            "limit": self.limit
+        }
+
         data = []
-        for submission in self.subreddit.search(**self.search_kwargs):
+        for submission in self.subreddit.search(**search_kwargs):
             row = {
                 "title": submission.title,
                 "upvote_ratio": submission.upvote_ratio,
@@ -71,6 +72,7 @@ class ModelBase:
                 "num_comments": submission.num_comments,
                 "permalink": submission.permalink,
                 "built_url": f"https://www.reddit.com{submission.permalink}",
+                "submission_test": submission.selftext,
             }
 
             if comments:

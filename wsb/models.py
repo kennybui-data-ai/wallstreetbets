@@ -67,7 +67,6 @@ class StockTicker(ModelBase):
 
         kwargs include subreddit, timefilter
         """
-        # kwargs["sort"] = "new"
         kwargs["search_query"] = ""
         super().__init__(**kwargs)
 
@@ -75,5 +74,8 @@ class StockTicker(ModelBase):
         """main method
         """
         print("Stock Ticker")
-        df, output_path = self.submissions()
+        all_dfs = []
+        for sort in ["relevance", "hot", "top", "new"]:
+            df, output_path = self.submissions(sort=sort)
+            all_dfs.append(df)
         pass
