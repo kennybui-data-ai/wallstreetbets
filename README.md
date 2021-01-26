@@ -2,13 +2,15 @@
 [only💎👐allowed🚀🌙](https://brrr.money/)
 
     .
-    ├── wsb                     # main scripts
-    |   ├── moneyprinter.py     # print tendies
-    |   ├── models.py           # Ticker, DailyDiscussion
-    |   └── credentials.json    # Reddit app client. Ask admin for access to the app client.
-    ├── tests                   # Unit and integration tests 
+    ├── wsb                           # main scripts
+    |   ├── moneyprinter.py           # print tendies
+    |   ├── models.py                 # data models kinda
+    |   ├── base.py                   # super classes
+    |   └── credentials.json          # Reddit app client. Ask admin for access to the app client.
+    ├── tests                         # Unit and integration tests 
     ├── tools
-    |   └── refresh_token.py    # manual tool to generate refresh token
+    |   ├── refresh_token.py          # manual tool to generate refresh token
+    |   └── rewrite_pretty_json.py    # rewrite json with proper indent. use if json prints in single line.
     ├── LICENSE
     └── README.md
 

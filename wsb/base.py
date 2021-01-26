@@ -42,13 +42,19 @@ class ModelBase:
         return self.__class__.__name__
 
     @property
-    def output(self):
+    def raw_output(self):
         datestr = dt.now().strftime("%Y%m%d_%H%M%S")
         file_prefix = self._get_name()
         if self.search_query:
             file_prefix += "_" + self.search_query.replace(":", "_")
 
-        return f"{self._output}/{file_prefix}_{datestr}.csv"
+        return f"{self._output}/raw/{file_prefix}_{datestr}.csv"
+
+    @property
+    def curated_output(self):
+        file_prefix = self._get_name()
+
+        return f"{self._output}/curated/{file_prefix}.csv"
 
     def submissions(self, sort=None, comments=False):
         """get all submissions that match the attributes
@@ -68,27 +74,36 @@ class ModelBase:
         }
         if self.search_query:
             search = self.subreddit.search
-            search_kwargs["sort"] = self.sort
+            sort = self.sort
+            search_kwargs["sort"] = sort
             search_kwargs["query"] = self.search_query
         else:
-            # would be one of the other methods: hot, top, new
+            # use the other methods: hot, top, new
             search = getattr(self.subreddit, sort)
             if sort in ["new", "hot"]:
                 search_kwargs.pop("time_filter")
 
         data = []
         for submission in search(**search_kwargs):
+            # https://praw.readthedocs.io/en/latest/code_overview/models/submission.html#praw.models.Submission
             row = {
+                "id": submission.id,
                 "title": submission.title,
+                "name": submission.name,
                 "upvote_ratio": submission.upvote_ratio,
                 "ups": submission.ups,
                 "score": submission.score,
-                "created": dt.fromtimestamp(submission.created).strftime('%c'),  # epoch
+                "sort": sort,
+                "created": dt.fromtimestamp(submission.created),  # .strftime('%c'),  # epoch
                 "author": submission.author,
                 "num_comments": submission.num_comments,
+                "flair": submission.link_flair_text,
                 "permalink": submission.permalink,
                 "built_url": f"https://www.reddit.com{submission.permalink}",
+                "url": submission.url,
                 "submission_test": submission.selftext,
+                "last_updated": dt.now(),
+                "raw_filename": self.raw_output,
             }
 
             if comments:
@@ -105,15 +120,41 @@ class ModelBase:
             data.append(row)
 
         df = pd.DataFrame(data)
+        self._raw_save(df)
         return df
 
-    def save(self, df):
-        """save the pandas dataframe
+    def _raw_save(self, df):
+        """save raw submissions pandas dataframe
 
         :param df: dataframe
         :type df: pandas dataframe obj
         """
         df.to_csv(
-            self.output,
+            self.raw_output,
+            # sep="|"
+        )
+
+    def save(self, df):
+        """merge curated pandas dataframe to existing curated file
+
+        :param df: dataframe
+        :type df: pandas dataframe obj
+        """
+        old_df = None
+        try:
+            parse_dates = ["created", "last_updated"]
+            old_df = pd.read_csv(self.curated_output, parse_dates=parse_dates).set_index("id")
+        except Exception as err:
+            print(str(err))
+
+        if old_df is not None:
+            curated_df = old_df.append(df.set_index("id")).sort_values('last_updated').groupby(level=0).last()
+        else:
+            curated_df = df
+
+        # with open(self.curated_output, "w") as f:
+        curated_df.to_csv(
+            # f,
+            self.curated_output,
             # sep="|"
         )

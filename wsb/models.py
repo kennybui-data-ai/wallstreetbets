@@ -82,5 +82,7 @@ class StockTicker(ModelBase):
             all_dfs.append(df)
 
         final_df = pd.concat(all_dfs)
+        # 
+
         self.save(final_df)
         return
