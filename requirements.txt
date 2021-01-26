@@ -2,3 +2,4 @@ requests
 praw
 pandas
 pytest
+ipykernel  # jupyter

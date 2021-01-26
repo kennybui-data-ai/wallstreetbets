@@ -35,6 +35,7 @@ class ModelBase:
         self.sort = sort
         self._output = output
         self.search_query = search_query
+        self.delim = "|"
 
     def _get_name(self):
         """get class name
@@ -131,7 +132,7 @@ class ModelBase:
         """
         df.to_csv(
             self.raw_output,
-            # sep="|"
+            self.delim
         )
 
     def save(self, df):
@@ -152,9 +153,7 @@ class ModelBase:
         else:
             curated_df = df
 
-        # with open(self.curated_output, "w") as f:
         curated_df.to_csv(
-            # f,
             self.curated_output,
-            # sep="|"
+            sep=self.delim
         )
