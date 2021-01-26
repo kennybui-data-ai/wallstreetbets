@@ -25,7 +25,8 @@ class DueDiligence(ModelBase):
         """main method
         """
         print("Due Diligence")
-        df, output_path = self.submissions()
+        df = self.submissions()
+        self.save(df)
         pass
 
 
@@ -49,8 +50,9 @@ class DailyDiscussion(ModelBase):
         """main method
         """
         print("Daily Discussion")
-        df, output_path = self.submissions(comments=True)
-        pass
+        df = self.submissions(comments=True)
+        self.save(df)
+        return
 
 
 class StockTicker(ModelBase):
@@ -76,12 +78,9 @@ class StockTicker(ModelBase):
         print("Stock Ticker")
         all_dfs = []
         for sort in ["hot", "top", "new", "controversial"]:
-            df, output_path = self.submissions(sort=sort)
+            df = self.submissions(sort=sort)
             all_dfs.append(df)
 
         final_df = pd.concat(all_dfs)
-        final_df.to_csv(
-            output_path,
-            # sep="|"
-        )
-        pass
+        self.save(final_df)
+        return

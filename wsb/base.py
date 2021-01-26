@@ -36,10 +36,18 @@ class ModelBase:
         self._output = output
         self.search_query = search_query
 
+    def _get_name(self):
+        """get class name
+        """
+        return self.__class__.__name__
+
     @property
     def output(self):
         datestr = dt.now().strftime("%Y%m%d_%H%M%S")
-        file_prefix = self.search_query.replace(":", "_")
+        file_prefix = self._get_name()
+        if self.search_query:
+            file_prefix += "_" + self.search_query.replace(":", "_")
+
         return f"{self._output}/{file_prefix}_{datestr}.csv"
 
     def submissions(self, sort=None, comments=False):
@@ -97,4 +105,15 @@ class ModelBase:
             data.append(row)
 
         df = pd.DataFrame(data)
-        return df, self.output
+        return df
+
+    def save(self, df):
+        """save the pandas dataframe
+
+        :param df: dataframe
+        :type df: pandas dataframe obj
+        """
+        df.to_csv(
+            self.output,
+            # sep="|"
+        )
