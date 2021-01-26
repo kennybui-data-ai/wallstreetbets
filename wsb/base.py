@@ -1,8 +1,10 @@
 # superclasses
 
 import pandas as pd
+import numpy as np
 from datetime import datetime as dt
 import pprint
+from pathlib import Path
 
 pp = pprint.PrettyPrinter(indent=4)
 
@@ -37,19 +39,46 @@ class ModelBase:
         self.search_query = search_query
         self.delim = "|"
 
+        # should be fine to hardcode
+        self.nyse_ticker_path = "./nyse-listed.csv"
+        self.nyse_ticker_df = pd.read_csv(self.nyse_ticker_path)
+        self.nyse_tickers = self.nyse_ticker_df["ACT Symbol"].tolist()
+
+        self.nasdaq_ticker_path = "./nasdaq-listed.csv"
+        self.nasdaq_ticker_df = pd.read_csv(self.nasdaq_ticker_path)
+        self.nasdaq_tickers = self.nasdaq_ticker_df["Symbol"].tolist()
+
+        self.tickers = self.nyse_tickers + self.nasdaq_tickers
+
+        self.datetime_now = dt.now()
+        self.date_folder = self.datetime_now.strftime("%Y/%m/%d")
+        self.time_str = self.datetime_now.strftime("%H%M%S")
+
     def _get_name(self):
         """get class name
         """
         return self.__class__.__name__
 
+    @staticmethod
+    def _make_dir(folder):
+        """make the directory
+        """
+        try:
+            Path(folder).mkdir(parents=True, exist_ok=True)
+        except Exception as err:
+            print(str(err))
+
+        return
+
     @property
     def raw_output(self):
-        datestr = dt.now().strftime("%Y%m%d_%H%M%S")
         file_prefix = self._get_name()
         if self.search_query:
             file_prefix += "_" + self.search_query.replace(":", "_")
 
-        return f"{self._output}/raw/{file_prefix}_{datestr}.csv"
+        folder = f"{self._output}/raw/{self.date_folder}"
+        self._make_dir(folder)
+        return f"{folder}/{file_prefix}_{self.time_str}.csv"
 
     @property
     def curated_output(self):
@@ -65,7 +94,8 @@ class ModelBase:
         :param comments: include comments, optional
         :type comments: bool
         """
-        pp.pprint(["{}: {}".format(a, getattr(self, a)) for a in vars(self)]
+        no_print_attributes = {"nyse_tickers", "nyse_ticker_df", "nasdaq_tickers", "nasdaq_ticker_df", "tickers"}
+        pp.pprint(["{}: {}".format(a, getattr(self, a)) for a in vars(self) if a not in no_print_attributes]
                   )
 
         # https://praw.readthedocs.io/en/latest/code_overview/models/subreddit.html?highlight=subreddit#praw.models.Subreddit.search
@@ -102,9 +132,10 @@ class ModelBase:
                 "permalink": submission.permalink,
                 "built_url": f"https://www.reddit.com{submission.permalink}",
                 "url": submission.url,
-                "submission_test": submission.selftext,
-                "last_updated": dt.now(),
+                "submission_text": submission.selftext,
+                "last_updated": self.datetime_now,
                 "raw_filename": self.raw_output,
+                "model": self._get_name(),
             }
 
             if comments:
@@ -135,25 +166,61 @@ class ModelBase:
             self.delim
         )
 
+    def merge(self, old, new):
+        """replicate SQL merge
+
+        :param old: pandas df
+        :type old: obj
+        :param new: pandas df:
+        :type new: obj
+        """
+        df = old.append(new.set_index("id"))\
+            .sort_values(['last_updated', 'score'], ascending=False)\
+            .groupby(level=0).last()
+        return df
+
     def save(self, df):
-        """merge curated pandas dataframe to existing curated file
+        """save new df to existing file
 
         :param df: dataframe
         :type df: pandas dataframe obj
         """
         old_df = None
+        # try catch for first time run. ie - curated file does not exist
         try:
             parse_dates = ["created", "last_updated"]
-            old_df = pd.read_csv(self.curated_output, parse_dates=parse_dates).set_index("id")
+            old_df = pd.read_csv(self.curated_output,
+                                 parse_dates=parse_dates,
+                                 sep=self.delim)\
+                .set_index("id")
         except Exception as err:
             print(str(err))
 
         if old_df is not None:
-            curated_df = old_df.append(df.set_index("id")).sort_values('last_updated').groupby(level=0).last()
+            df = self.merge(
+                old=old_df,
+                new=df
+            )
         else:
-            curated_df = df
+            pass
 
-        curated_df.to_csv(
+        df.to_csv(
             self.curated_output,
             sep=self.delim
         )
+
+    def extract_tickers(self, df):
+        # https://stackoverflow.com/questions/57483859/pandas-finding-matchany-between-list-of-strings-and-df-column-valuesas-list
+        ticker_pattern = "(\$*[A-Z]{1,5})(?=[\s\.\?\!\,])+"
+        df["title_regex"] = df['title'].str.findall(ticker_pattern)  # .str.join(', ').replace(r'^\s*$', np.nan, regex=True)
+        df['title_ticker'] = [
+            [val.lstrip("$") for val in sublist if val.lstrip("$") in self.tickers]
+            for sublist in df['title_regex'].values
+        ]
+
+        df['submission_text_regex'] = df['submission_text'].str.findall(ticker_pattern)
+        df['submission_text_ticker'] = [
+            [val.lstrip("$") for val in sublist if val.lstrip("$") in self.tickers]
+            for sublist in df['submission_text_regex'].values
+        ]
+        return df
