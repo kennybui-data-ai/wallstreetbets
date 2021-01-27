@@ -2,7 +2,7 @@
 # idea is each model might potentially implement unique way of analyzing the data
 # also want to support NLP sentiment analysis in the future
 
-from base import ModelBase, pd
+from base import ModelBase, pd, np
 
 
 class DueDiligence(ModelBase):
@@ -81,9 +81,9 @@ class StockTicker(ModelBase):
                          }
                          )
 
-        df = self.model(df)
+        df = self.transform(df)
 
-        agg_df = df[["ticker", "id"]].groupby(["ticker"]).nunique().reset_index().dropna()
+        agg_df = self.clean(df[["ticker", "id"]].groupby(["ticker"]).nunique().reset_index())
         agg_df["drilldown"] = agg_df["ticker"]
         data = agg_df.rename({"id": "y", "ticker": "name"}, axis=1).to_dict('records')
 
@@ -92,17 +92,17 @@ class StockTicker(ModelBase):
                 'type': 'column'
             },
             'title': {
-                'text': 'Stock Tickers mentioned on Wall Street Bets'
+                'text': 'Stock Tickers mentioned on wallstreetbets'
             },
             'subtitle': {
                 'text': 'Click the columns to view versions. Source: <a href="https://www.reddit.com/r/wallstreetbets/">wallstreetbets on Reddit</a>.'
             },
             'xAxis': {
-                'type': 'stock ticker'
+                'type': 'category'
             },
             'yAxis': {
                 'title': {
-                    'text': 'mentions'
+                    'text': 'number of mentions'
                 }
 
             },
@@ -121,7 +121,7 @@ class StockTicker(ModelBase):
 
             'tooltip': {
                 'headerFormat': '<span style="font-size:11px">{series.name}</span><br>',
-                'pointFormat': '<span style="color:{point.color}">{point.name}</span>: <b>{point.y:.2f}</b> of total<br/>'
+                'pointFormat': '<span style="color:{point.color}">{point.name}</span>: <b>{point.y:.2f}</b> mentions<br/>'
             },
 
         }
@@ -130,8 +130,7 @@ class StockTicker(ModelBase):
         H.add_data_set(data, 'column', "Tickers", colorByPoint=True)
 
         # same transformation used in stack_column_chart
-        drill_df = df.groupby(["ticker", "title/submission"])["ticker"].count()\
-            .unstack('title/submission').fillna(0).reset_index().dropna()
+        drill_df = self.model(df)
 
         for row in drill_df.itertuples():
             temp_data = [
@@ -152,9 +151,8 @@ class StockTicker(ModelBase):
                          }
                          )
 
+        df = self.transform(df)
         df = self.model(df)
-        df = df.groupby(["ticker", "title/submission"])["ticker"].count()\
-            .unstack('title/submission').fillna(0).reset_index().dropna()
 
         options = {
             'title': {
@@ -195,7 +193,16 @@ class StockTicker(ModelBase):
         H.save_file("../columnstack")
         return
 
+    def clean(self, df):
+        """clean ticker rows that are empty
+        """
+        return df[df['ticker'].str.strip().astype(bool)]
+
     def model(self, df):
+        return self.clean(df.groupby(["ticker", "title/submission"])["ticker"].count().unstack('title/submission').reset_index()
+                          )
+
+    def transform(self, df):
         df = self.explode(df, self.ticker_cols)
 
         title_df = df[["id", "title", "built_url", "title_ticker"]].drop_duplicates(subset=['id', 'title_ticker'])
@@ -207,7 +214,7 @@ class StockTicker(ModelBase):
         submission_df = submission_df.rename({"submission_text_ticker": "ticker"}, axis=1)
 
         plot_df = pd.concat([title_df, submission_df], ignore_index=True)
-        return self.filter_count(plot_df, "ticker", 20)
+        return self.filter_count(plot_df, "ticker", 150)
 
     def tendies(self):
         """main method
