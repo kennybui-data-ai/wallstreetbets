@@ -5,6 +5,7 @@ import numpy as np
 from datetime import datetime as dt
 import pprint
 from pathlib import Path
+# from ast import literal_eval
 
 pp = pprint.PrettyPrinter(indent=4)
 
@@ -223,4 +224,18 @@ class ModelBase:
             [val.lstrip("$") for val in sublist if val.lstrip("$") in self.tickers]
             for sublist in df['submission_text_regex'].values
         ]
+        return df
+
+    @staticmethod
+    def explode(df, cols):
+        """method to explode list columns. mainly used for stock ticker columns
+
+        :param df: pandas df
+        :type df: obj
+        :param cols: list of cols to explode
+        :type cols: list
+        """
+        for col in cols:
+            df = df.explode(col)
+
         return df

@@ -81,7 +81,7 @@ class StockTicker(ModelBase):
             df = self.submissions(sort=sort)
             all_dfs.append(df)
 
-        df = pd.concat(all_dfs).drop_duplicates(subset=['id'])
+        df = pd.concat(all_dfs, ignore_index=True).drop_duplicates(subset=['id'])
         df = self.extract_tickers(df)
         self.save(df)
         return

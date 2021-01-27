@@ -3,3 +3,4 @@ praw
 pandas
 pytest
 ipykernel  # jupyter
+matplotlib
