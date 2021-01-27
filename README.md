@@ -1,6 +1,6 @@
 # wallstreetbets
 [only💎👐allowed🚀🌙](https://brrr.money/)  
-https://kennybui-data-ai.github.io/wallstreetbets/ 
+http://kennybui.io/wallstreetbets/ 
 
     .
     ├── wsb                           # main scripts
