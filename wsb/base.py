@@ -5,6 +5,7 @@ import numpy as np
 from datetime import datetime as dt
 import pprint
 from pathlib import Path
+from matplotlib import pyplot as plt
 # from ast import literal_eval
 
 pp = pprint.PrettyPrinter(indent=4)
@@ -50,10 +51,11 @@ class ModelBase:
         self.nasdaq_tickers = self.nasdaq_ticker_df["Symbol"].tolist()
 
         self.tickers = self.nyse_tickers + self.nasdaq_tickers
+        self.ticker_cols = ["title_ticker", "submission_text_ticker"]
 
         self.datetime_now = dt.now()
         self.date_folder = self.datetime_now.strftime("%Y/%m/%d")
-        self.time_str = self.datetime_now.strftime("%H%M%S")
+        # self.time_str = self.datetime_now.strftime("%H%M%S")
 
     def _get_name(self):
         """get class name
@@ -79,13 +81,16 @@ class ModelBase:
 
         folder = f"{self._output}/raw/{self.date_folder}"
         self._make_dir(folder)
-        return f"{folder}/{file_prefix}_{self.time_str}.csv"
+        time_str = dt.now().strftime("%H%M%S")
+        return f"{folder}/{file_prefix}_{time_str}.csv"
 
     @property
     def curated_output(self):
-        file_prefix = self._get_name()
+        return f"{self._output}/curated/{self._get_name()}.csv"
 
-        return f"{self._output}/curated/{file_prefix}.csv"
+    @property
+    def semantic_output(self):
+        return f"{self._output}/semantic/{self._get_name()}.png"
 
     def submissions(self, sort=None, comments=False):
         """get all submissions that match the attributes
@@ -95,7 +100,8 @@ class ModelBase:
         :param comments: include comments, optional
         :type comments: bool
         """
-        no_print_attributes = {"nyse_tickers", "nyse_ticker_df", "nasdaq_tickers", "nasdaq_ticker_df", "tickers"}
+        no_print_attributes = {"nyse_tickers", "nyse_ticker_df",
+                               "nasdaq_tickers", "nasdaq_ticker_df", "tickers"}
         pp.pprint(["{}: {}".format(a, getattr(self, a)) for a in vars(self) if a not in no_print_attributes]
                   )
 
@@ -126,7 +132,8 @@ class ModelBase:
                 "ups": submission.ups,
                 "score": submission.score,
                 "sort": sort,
-                "created": dt.fromtimestamp(submission.created),  # .strftime('%c'),  # epoch
+                # .strftime('%c'),  # epoch
+                "created": dt.fromtimestamp(submission.created),
                 "author": submission.author,
                 "num_comments": submission.num_comments,
                 "flair": submission.link_flair_text,
@@ -143,8 +150,10 @@ class ModelBase:
                 # https://praw.readthedocs.io/en/latest/tutorials/comments.html#extracting-comments
                 # TODO post processing, maybe let models take care of that
                 # fyi this takes quite a few seconds
-                submission.comments.replace_more(limit=None)  # setting limit will iterate through less comments
-                row["comments"] = [comment.body for comment in submission.comments.list()]
+                # setting limit will iterate through less comments
+                submission.comments.replace_more(limit=None)
+                row["comments"] = [
+                    comment.body for comment in submission.comments.list()]
 
             # for col in vars(submission):
             #     row[col] = getattr(submission, col)
@@ -213,18 +222,23 @@ class ModelBase:
     def extract_tickers(self, df):
         # https://stackoverflow.com/questions/57483859/pandas-finding-matchany-between-list-of-strings-and-df-column-valuesas-list
         ticker_pattern = "(\$*[A-Z]{1,5})(?=[\s\.\?\!\,])+"
-        df["title_regex"] = df['title'].str.findall(ticker_pattern)  # .str.join(', ').replace(r'^\s*$', np.nan, regex=True)
+        # .str.join(', ').replace(r'^\s*$', np.nan, regex=True)
+        df["title_regex"] = df['title'].str.findall(ticker_pattern)
         df['title_ticker'] = [
-            [val.lstrip("$") for val in sublist if val.lstrip("$") in self.tickers]
+            [val.lstrip("$")
+             for val in sublist if val.lstrip("$") in self.tickers]
             for sublist in df['title_regex'].values
         ]
 
-        df['submission_text_regex'] = df['submission_text'].str.findall(ticker_pattern)
+        df['submission_text_regex'] = df['submission_text'].str.findall(
+            ticker_pattern)
         df['submission_text_ticker'] = [
-            [val.lstrip("$") for val in sublist if val.lstrip("$") in self.tickers]
+            [val.lstrip("$")
+             for val in sublist if val.lstrip("$") in self.tickers]
             for sublist in df['submission_text_regex'].values
         ]
-        return df
+
+        return self.explode(df, self.ticker_cols)
 
     @staticmethod
     def explode(df, cols):
@@ -239,3 +253,30 @@ class ModelBase:
             df = df.explode(col)
 
         return df
+
+    @staticmethod
+    def filter_count(df, col, min):
+        return df[df.groupby(col)[col].transform('count') > min]
+
+    def plot_tickers(self, df):
+        title_df = df[["id", "title", "built_url", "title_ticker"]].drop_duplicates(
+            subset=['id', 'title_ticker'])
+        title_df["title/submission"] = "title"
+        title_df = title_df.rename({"title_ticker": "ticker"}, axis=1)
+
+        submission_df = df[["id", "title", "built_url", "submission_text_ticker"]].drop_duplicates(
+            subset=['id', 'submission_text_ticker'])
+        submission_df["title/submission"] = "submission"
+        submission_df = submission_df.rename(
+            {"submission_text_ticker": "ticker"}, axis=1)
+
+        plot_df = self.filter_count(
+            pd.concat([title_df, submission_df], ignore_index=True),
+            "ticker",
+            11)
+
+        # plot here
+        plot_df.groupby(["ticker", "title/submission"])["ticker"].count().unstack('title/submission').fillna(0)\
+            .plot(kind='bar', stacked=True)
+
+        plt.savefig(self.semantic_output, bbox_inches="tight")

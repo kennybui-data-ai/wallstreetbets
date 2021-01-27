@@ -4,6 +4,7 @@ import models
 import argparse
 # from datetime import datetime
 import json
+from timeit import default_timer as timer
 
 
 class MoneyPrinter:
@@ -29,7 +30,8 @@ class MoneyPrinter:
         self.limit = args.limit
 
         not_models = {"timefilter", "output", "credentials", "limit"}
-        self.modelnames = [a for a in vars(args) if a not in not_models and getattr(args, a)]
+        self.modelnames = [a for a in vars(
+            args) if a not in not_models and getattr(args, a)]
 
     def pump(self):
         """test
@@ -97,7 +99,12 @@ def parse_args():
 
 
 if __name__ == "__main__":
+    start = timer()
+
     args = parse_args()
 
     mp = MoneyPrinter(args)
     mp.go_brrr()
+
+    end = timer()
+    print("Total execution time:", end - start, "seconds")

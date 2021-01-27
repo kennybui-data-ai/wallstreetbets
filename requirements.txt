@@ -4,3 +4,7 @@ pandas
 pytest
 ipykernel  # jupyter
 matplotlib
+pandas-highcharts
+flake8
+autopep8
+pytest
