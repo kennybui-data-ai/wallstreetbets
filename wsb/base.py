@@ -6,6 +6,7 @@ from datetime import datetime as dt
 import pprint
 from pathlib import Path
 from matplotlib import pyplot as plt
+from highcharts import Highchart
 # from ast import literal_eval
 
 pp = pprint.PrettyPrinter(indent=4)
@@ -61,6 +62,10 @@ class ModelBase:
         """get class name
         """
         return self.__class__.__name__
+
+    @property
+    def highchart(self):
+        return Highchart(width=850, height=600)
 
     @staticmethod
     def _make_dir(folder):
@@ -238,7 +243,7 @@ class ModelBase:
             for sublist in df['submission_text_regex'].values
         ]
 
-        return self.explode(df, self.ticker_cols)
+        return df
 
     @staticmethod
     def explode(df, cols):
@@ -280,3 +285,6 @@ class ModelBase:
             .plot(kind='bar', stacked=True)
 
         plt.savefig(self.semantic_output, bbox_inches="tight")
+
+        def convert_list(self, x):
+            return x.strip("[]").split(", ")

@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <link href="https://www.highcharts.com/highslide/highslide.css" rel="stylesheet" />
+        <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+        <script type="text/javascript" src="https://code.highcharts.com/highcharts.js"></script>
+        <script type="text/javascript" src="https://code.highcharts.com/highcharts-more.js"></script>
+        <script type="text/javascript" src="https://code.highcharts.com/modules/heatmap.js"></script>
+        <script type="text/javascript" src="https://code.highcharts.com/modules/exporting.js"></script>
+        <script type="text/javascript" src="http://code.highcharts.com/modules/drilldown.js"></script>
+    </head>
+    <body style="margin:0;padding:0">
+                <div id="container" style="width:850px;height:600px;">Loading....</div>
+
+
+    <script>
+        $(function(){
+
+
+
+
+
+            Highcharts.setOptions({"global": {}, "lang": {}});
+            var option = {"chart": {"renderTo": "container", "width": 850, "height": 600, "type": "column"}, "colors": {}, "credits": {"enabled": false}, "drilldown": {}, "exporting": {}, "labels": {}, "legend": {"enabled": false}, "loading": {}, "navigation": {}, "pane": {}, "plotOptions": {"series": {"borderWidth": 0, "dataLabels": {"enabled": true, "format": "{point.y:.1f}"}}}, "series": {}, "subtitle": {"text": "Click the columns to view breakdown. Source: <a href=\"https://www.reddit.com/r/wallstreetbets/\">wallstreetbets on Reddit</a>."}, "title": {"text": "Stock Tickers mentioned on wallsteetbets"}, "tooltip": {"headerFormat": "<span style=\"font-size:11px\">{series.name}</span><br>", "pointFormat": "<span style=\"color:{point.color}\">{point.name}</span>: <b>{point.y:.2f}</b> mentions<br/>"}, "xAxis": {"type": "category"}, "yAxis": {"title": {"text": "Number of Mentions"}}};
+
+
+            var drilldowndata = [{"data": [["submission_text", 642], ["title", 453]], "type": "column", "name": "", "id": ""}, {"data": [["submission_text", 10], ["title", 9]], "type": "column", "name": "A", "id": "A"}, {"data": [["submission_text", 7], ["title", 13]], "type": "column", "name": "DD", "id": "DD"}, {"data": [["submission_text", 64], ["title", 183]], "type": "column", "name": "GME", "id": "GME"}, {"data": [["submission_text", 88], ["title", 77]], "type": "column", "name": "I", "id": "I"}, {"data": [["submission_text", 3], ["title", 10]], "type": "column", "name": "K", "id": "K"}, {"data": [["submission_text", 1], ["title", 21]], "type": "column", "name": "NOK", "id": "NOK"}];
+            option.drilldown.series = drilldowndata;
+ 
+
+            var chart = new Highcharts.Chart(option);
+
+            var data = [{"data": [{"name": "", "y": 752, "drilldown": ""}, {"name": "A", "y": 19, "drilldown": "A"}, {"name": "DD", "y": 20, "drilldown": "DD"}, {"name": "GME", "y": 226, "drilldown": "GME"}, {"name": "I", "y": 162, "drilldown": "I"}, {"name": "K", "y": 13, "drilldown": "K"}, {"name": "NOK", "y": 22, "drilldown": "NOK"}], "type": "column", "name": "Stock Tickers", "colorByPoint": true}];
+            var dataLen = data.length;
+            for (var ix = 0; ix < dataLen; ix++) {
+                chart.addSeries(data[ix]);
+            }
+ 
+
+
+
+
+
+
+
+        
+    });
+        </script>
+
+    </body>
+</html>

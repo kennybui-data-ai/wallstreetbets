@@ -1,10 +1,15 @@
 requests
 praw
 pandas
-pytest
-ipykernel  # jupyter
 matplotlib
-pandas-highcharts
+# pandas-highcharts # this library not maintained
+# python-highcharts # official release has highchart version conflict
+git+https://github.com/kennybui-data-ai/python-highcharts#egg=python-highcharts
+
+# jupyter
+ipykernel  
+
+# testing
 flake8
 autopep8
 pytest
