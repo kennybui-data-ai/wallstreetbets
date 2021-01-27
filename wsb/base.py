@@ -286,5 +286,5 @@ class ModelBase:
 
         plt.savefig(self.semantic_output, bbox_inches="tight")
 
-        def convert_list(self, x):
-            return x.strip("[]").split(", ")
+    def convert_list(self, x):
+        return x.strip("[]").split(", ")

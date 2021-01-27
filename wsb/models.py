@@ -129,7 +129,8 @@ class StockTicker(ModelBase):
         H.set_dict_options(options)
         H.add_data_set(data, 'column', "Tickers", colorByPoint=True)
 
-        drill_df = plot_df.groupby(["ticker", "title/submission"])["ticker"].count()\
+        # same transformation used in stack_column_chart
+        drill_df = df.groupby(["ticker", "title/submission"])["ticker"].count()\
             .unstack('title/submission').fillna(0).reset_index().dropna()
 
         for row in drill_df.itertuples():
@@ -142,7 +143,7 @@ class StockTicker(ModelBase):
         H.save_file("../drilldown")
         return
 
-    def stack_column_chart(self, df):
+    def stack_column_chart(self):
         H = self.highchart
         df = pd.read_csv(self.curated_output, sep=self.delim,
                          converters={
