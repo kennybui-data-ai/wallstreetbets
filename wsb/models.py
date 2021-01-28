@@ -139,7 +139,7 @@ class StockTicker(ModelBase):
             ]
             H.add_drilldown_data_set(temp_data, 'column', row.ticker.strip(), name=row.ticker.strip())
 
-        H.save_file("../drilldown")
+        H.save_file(f"{self.semantic_folder}/drilldown")
         return
 
     def stack_column_chart(self):
@@ -190,7 +190,7 @@ class StockTicker(ModelBase):
 
         H.add_data_set(df["submission"].tolist(), "column", "submission text")
         H.add_data_set(df["title"].tolist(), "column", "title of submission")
-        H.save_file("../columnstack")
+        H.save_file(f"{self.semantic_folder}/columnstack")
         return
 
     def clean(self, df):
@@ -214,7 +214,7 @@ class StockTicker(ModelBase):
         submission_df = submission_df.rename({"submission_text_ticker": "ticker"}, axis=1)
 
         plot_df = pd.concat([title_df, submission_df], ignore_index=True)
-        return self.filter_count(plot_df, "ticker", 150)
+        return self.filter_count(plot_df, "ticker", 1)
 
     def tendies(self):
         """main method

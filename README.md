@@ -1,5 +1,13 @@
 # wallstreetbets
-[only💎👐allowed🚀🌙](https://brrr.money/)  
+only💎👐allowed🚀🌙
+
+TODO: Altair Python  
+- https://altair-viz.github.io/getting_started/starting.html
+- https://stackoverflow.com/questions/57695759/multiple-interactive-graphs-in-single-html-page
+- https://github.com/altair-viz/altair/issues/1422
+- https://altair-viz.github.io/user_guide/compound_charts.html
+
+<a href="https://brrr.money/"><img src="./img/moneyprinter.gif" width="75" height="75" /></a>  
 https://kennybui-data-ai.github.io/wallstreetbets/
 
     .
