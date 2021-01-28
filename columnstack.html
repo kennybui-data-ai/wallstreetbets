@@ -21,14 +21,14 @@
 
 
             Highcharts.setOptions({"global": {}, "lang": {}});
-            var option = {"chart": {"renderTo": "container", "width": 850, "height": 600}, "colors": {}, "credits": {"enabled": false}, "drilldown": {}, "exporting": {}, "labels": {}, "legend": {}, "loading": {}, "navigation": {}, "pane": {}, "plotOptions": {"column": {"stacking": "normal"}}, "series": {}, "subtitle": {}, "title": {"text": "Stock Ticker mentions on wallstreetbets"}, "tooltip": {"formatter": function () {                                return '<b>' + this.x + '</b><br/>' +                                    this.series.name + ': ' + this.y + '<br/>' +                                    'Total: ' + this.point.stackTotal;                            }}, "xAxis": {"categories": ["'A'", "'AMC'", "'GME'", "'NOK'"]}, "yAxis": {"allowDecimals": false, "min": 0, "title": {"text": "Number of Mentions"}}};
+            var option = {"chart": {"renderTo": "container", "width": 850, "height": 600}, "colors": {}, "credits": {"enabled": false}, "drilldown": {}, "exporting": {}, "labels": {}, "legend": {}, "loading": {}, "navigation": {}, "pane": {}, "plotOptions": {"column": {"stacking": "normal"}}, "series": {}, "subtitle": {}, "title": {"text": "Stock Ticker mentions on wallstreetbets"}, "tooltip": {"formatter": function () {                                return '<b>' + this.x + '</b><br/>' +                                    this.series.name + ': ' + this.y + '<br/>' +                                    'Total: ' + this.point.stackTotal;                            }}, "xAxis": {"categories": ["'A'", "'AMC'", "'ARE'", "'DO'", "'GME'", "'IT'", "'NOK'"]}, "yAxis": {"allowDecimals": false, "min": 0, "title": {"text": "Number of Mentions"}}};
 
 
  
 
             var chart = new Highcharts.Chart(option);
 
-            var data = [{"data": [90, 237, 513, 143], "type": "column", "name": "submission text"}, {"data": [66, 460, 714, 405], "type": "column", "name": "title of submission"}];
+            var data = [{"data": [170, 383, 71, 83, 842, 78, 214], "type": "column", "name": "submission text"}, {"data": [110, 618, 89, 76, 1043, 82, 499], "type": "column", "name": "title of submission"}];
             var dataLen = data.length;
             for (var ix = 0; ix < dataLen; ix++) {
                 chart.addSeries(data[ix]);

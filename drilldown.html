@@ -25,13 +25,13 @@
             var option = {"chart": {"renderTo": "container", "width": 850, "height": 600, "type": "column"}, "colors": {}, "credits": {"enabled": false}, "drilldown": {}, "exporting": {}, "labels": {}, "legend": {"enabled": false}, "loading": {}, "navigation": {}, "pane": {}, "plotOptions": {"series": {"borderWidth": 0, "dataLabels": {"enabled": true, "format": "{point.y:.1f}"}}}, "series": {}, "subtitle": {"text": "Click the columns to view versions. Source: <a href=\"https://www.reddit.com/r/wallstreetbets/\">wallstreetbets on Reddit</a>."}, "title": {"text": "Stock Tickers mentioned on wallstreetbets"}, "tooltip": {"headerFormat": "<span style=\"font-size:11px\">{series.name}</span><br>", "pointFormat": "<span style=\"color:{point.color}\">{point.name}</span>: <b>{point.y:.2f}</b> mentions<br/>"}, "xAxis": {"type": "category"}, "yAxis": {"title": {"text": "number of mentions"}}};
 
 
-            var drilldowndata = [{"data": [["submission_text", 90], ["title", 66]], "type": "column", "name": "'A'", "id": "'A'"}, {"data": [["submission_text", 237], ["title", 460]], "type": "column", "name": "'AMC'", "id": "'AMC'"}, {"data": [["submission_text", 513], ["title", 714]], "type": "column", "name": "'GME'", "id": "'GME'"}, {"data": [["submission_text", 143], ["title", 405]], "type": "column", "name": "'NOK'", "id": "'NOK'"}];
+            var drilldowndata = [{"data": [["submission_text", 170], ["title", 110]], "type": "column", "name": "'A'", "id": "'A'"}, {"data": [["submission_text", 383], ["title", 618]], "type": "column", "name": "'AMC'", "id": "'AMC'"}, {"data": [["submission_text", 71], ["title", 89]], "type": "column", "name": "'ARE'", "id": "'ARE'"}, {"data": [["submission_text", 83], ["title", 76]], "type": "column", "name": "'DO'", "id": "'DO'"}, {"data": [["submission_text", 842], ["title", 1043]], "type": "column", "name": "'GME'", "id": "'GME'"}, {"data": [["submission_text", 78], ["title", 82]], "type": "column", "name": "'IT'", "id": "'IT'"}, {"data": [["submission_text", 214], ["title", 499]], "type": "column", "name": "'NOK'", "id": "'NOK'"}];
             option.drilldown.series = drilldowndata;
  
 
             var chart = new Highcharts.Chart(option);
 
-            var data = [{"data": [{"name": "'A'", "y": 150, "drilldown": "'A'"}, {"name": "'AMC'", "y": 573, "drilldown": "'AMC'"}, {"name": "'GME'", "y": 1034, "drilldown": "'GME'"}, {"name": "'NOK'", "y": 469, "drilldown": "'NOK'"}], "type": "column", "name": "Tickers", "colorByPoint": true}];
+            var data = [{"data": [{"name": "'A'", "y": 269, "drilldown": "'A'"}, {"name": "'AMC'", "y": 838, "drilldown": "'AMC'"}, {"name": "'ARE'", "y": 153, "drilldown": "'ARE'"}, {"name": "'DO'", "y": 151, "drilldown": "'DO'"}, {"name": "'GME'", "y": 1603, "drilldown": "'GME'"}, {"name": "'IT'", "y": 153, "drilldown": "'IT'"}, {"name": "'NOK'", "y": 614, "drilldown": "'NOK'"}], "type": "column", "name": "Tickers", "colorByPoint": true}];
             var dataLen = data.length;
             for (var ix = 0; ix < dataLen; ix++) {
                 chart.addSeries(data[ix]);
