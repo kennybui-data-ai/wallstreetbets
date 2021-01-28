@@ -1,4 +1,5 @@
 # wallstreetbets
+TODO: Altair Python  
 [only💎👐allowed🚀🌙](https://brrr.money/)  
 https://kennybui-data-ai.github.io/wallstreetbets/
 

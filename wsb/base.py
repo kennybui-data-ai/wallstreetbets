@@ -39,6 +39,7 @@ class ModelBase:
         self.limit = limit
         self.sort = sort
         self._output = output
+        self.semantic_folder = f"{self._output}/semantic"
         self.search_query = search_query
         self.delim = "|"
 
@@ -65,7 +66,8 @@ class ModelBase:
 
     @property
     def highchart(self):
-        return Highchart(width=850, height=600)
+        # return Highchart(width=850, height=600)
+        return Highchart()
 
     @staticmethod
     def _make_dir(folder):
@@ -95,7 +97,7 @@ class ModelBase:
 
     @property
     def semantic_output(self):
-        return f"{self._output}/semantic/{self._get_name()}.png"
+        return f"{self.semantic_folder}/{self._get_name()}.png"
 
     def submissions(self, sort=None, comments=False):
         """get all submissions that match the attributes
