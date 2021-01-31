@@ -1,18 +1,42 @@
-# models are based on WSB flairs or functionality: https://www.reddit.com/r/wallstreetbets/wiki/linkflair
-# idea is each model might potentially implement unique way of analyzing the data
+# models are based on WSB flairs or functionality:
+# https://www.reddit.com/r/wallstreetbets/wiki/linkflair
+
+# idea is each model might implement unique way of analyzing the data
 # also want to support NLP sentiment analysis in the future
 
 from base import ModelBase, pd
 import altair as alt
 
-# use with caution: https://altair-viz.github.io/user_guide/faq.html#maxrowserror-how-can-i-plot-large-datasets
+# use with caution:
+# https://altair-viz.github.io/user_guide/faq.html#maxrowserror-how-can-i-plot-large-datasets
 # alt.data_transformers.disable_max_rows()
 
 # https://github.com/altair-viz/altair/issues/742
 # alt.renderers.set_embed_options(theme='dark')  # only for jupyter
 
 # alt.themes.enable("fivethirtyeight")
-alt.themes.enable("dark")
+# alt.themes.enable("dark")
+
+
+def dark_href():
+    return {
+        "usermeta": {
+            "embedOptions": {
+                "theme": "dark",
+                # loader option for opening link in new tab. it is Vega Loader
+                # not working as expected. keep here for now
+                # modified the vegaEmbed in html as backup
+                "loader": {"target": "_blank"}
+            }
+        }
+    }
+
+
+# register the custom theme under a chosen name
+alt.themes.register('dark_href', dark_href)
+
+# enable the newly registered theme
+alt.themes.enable('dark_href')
 
 
 class DueDiligence(ModelBase):
@@ -71,7 +95,8 @@ class StockTicker(ModelBase):
     default searchtype is hot
     default time filter is day
 
-    TODO @Mark not sure how you want to implement this. or do you want to use specific flairs?
+    TODO @Mark not sure how you want to implement this.
+    or do you want to use specific flairs?
     """
 
     def __init__(self, **kwargs):
@@ -84,44 +109,63 @@ class StockTicker(ModelBase):
 
     def chart(self):
         parse_dates = ["created", "last_updated"]
-        df = pd.read_csv(self.curated_output, sep=self.delim, parse_dates=parse_dates,
-                         converters={
-                             "title_ticker": lambda x: self.convert_list(x),
-                             "submission_text_ticker": lambda x: self.convert_list(x)
-                         }
-                         )
+        df = pd.read_csv(
+            self.curated_output, sep=self.delim,
+            parse_dates=parse_dates,
+            converters={
+                "title_ticker": lambda x: self.convert_list(x),
+                "submission_text_ticker": lambda x: self.convert_list(x)
+            }
+        )
 
         df = self.clean(
             self.transform(df)
         )
 
-        df["date_str"] = df["created"].map(lambda x: x.strftime("%Y-%m-%d %H:%M"))
+        df = df.query(f'ticker not in list({self.words})')
+
+        df["date_str"] = df["created"].map(
+            lambda x: x.strftime("%Y-%m-%d %H:%M")
+            )
         df["date"] = df["created"].map(lambda x: x.strftime("%Y-%m-%d"))
         df["date2"] = df["created"].map(lambda x: x.strftime("%Y-%m-%d"))
         data_start = df["date"].min()
         data_end = df["date"].max()
 
-        # brush = alt.selection(type='interval')
-
         # DATETIME RANGE
         # https://github.com/altair-viz/altair/issues/2008#issuecomment-621428053
         range_start = alt.binding(input="date")
         range_end = alt.binding(input="date")
-        select_range_start = alt.selection_single(name="start", fields=["date"], bind=range_start, init={"date": data_start})
-        select_range_end = alt.selection_single(name="end", fields=["date"], bind=range_end, init={"date": data_end})
-        # slider = alt.binding_range(min=self.timestamp(min(self.datelist)), max=self.timestamp(max(self.datelist)), step=1, name='Created Date')
-        # slider_selection = alt.selection_single(name="SelectorName", fields=['created_date'],
-        #                                         bind=slider, init={'created': self.timestamp('2021-01-01')})
+        select_range_start = alt.selection_single(
+            name="start", fields=["date"], bind=range_start,
+            init={"date": data_start}
+        )
+        select_range_end = alt.selection_single(
+            name="end", fields=["date"], bind=range_end,
+            init={"date": data_end}
+        )
+        # slider = alt.binding_range(
+        #     min=self.timestamp(min(self.datelist)),
+        #     max=self.timestamp(max(self.datelist)),
+        #     step=1, name='Created Date'
+        # )
+        # slider_selection = alt.selection_single(
+        #     name="SelectorName", fields=['created_date'],
+        #     bind=slider, init={'created': self.timestamp('2021-01-01')}
+        # )
 
+        # brush = alt.selection(type="interval", encodings=['x'])
         selector = alt.selection_single(
             empty='all', fields=['ticker']
         )
 
         base = alt.Chart(df).transform_filter(
             # slider_selection
-            (alt.datum.date2 >= select_range_start.date) & (alt.datum.date2 <= select_range_end.date)
+            (alt.datum.date2 >= select_range_start.date) & (
+                alt.datum.date2 <= select_range_end.date)
         ).add_selection(
-            selector,
+            selector, 
+            # brush,
             # slider_selection,
             select_range_start, select_range_end
         )
@@ -129,13 +173,15 @@ class StockTicker(ModelBase):
         bars = base.mark_bar().encode(
             # https://stackoverflow.com/questions/52877697/order-bar-chart-in-altair
             x=alt.X('ticker',
-                    sort=alt.EncodingSortField(field="ticker", op="count", order='descending'),
+                    sort=alt.EncodingSortField(
+                        field="ticker", op="count", order='descending'),
                     axis=alt.Axis(title='Stock Tickers')
                     ),
             y=alt.Y("count(id)",
                     axis=alt.Axis(title='Number of Mentions')
                     ),
-            color=alt.condition(selector, 'id:O', alt.value('lightgray'), legend=None),
+            color=alt.condition(selector, 'id:O', alt.value(
+                'lightgray'), legend=None),
         ).properties(
             width=1400,
             height=600
@@ -147,20 +193,20 @@ class StockTicker(ModelBase):
             url='https://www.reddit.com' + alt.datum.permalink
         ).mark_text(
             align='left',
-            dx=-15,
+            dx=-45,
             dy=0,
             color="white"
         ).encode(
             y=alt.Y('row_number:O', axis=None),
             href='url:N',
-            tooltip=['url:N']
+            tooltip=['url:N'],
             # color=alt.condition(selector,'id:O',alt.value('lightgray'),legend=None),
         ).transform_window(
             # groupby=["ticker"],  # causes overlap
             # https://altair-viz.github.io/user_guide/generated/core/altair.SortField.html#altair.SortField
             sort=[
-                alt.SortField("created", "descending"),
                 alt.SortField("score", "descending"),
+                alt.SortField("created", "descending"),
             ],
             row_number='row_number()'
         ).transform_filter(
@@ -171,15 +217,29 @@ class StockTicker(ModelBase):
             # only shows up to 20
             alt.datum.rank < 20
         ).properties(
-            width=30,
+            width=100,
             height=300
         )
 
         # Data Tables
-        created = ranked_text.encode(text='date_str').properties(title='Created Date')
-        ticker = ranked_text.encode(text='ticker').properties(title='Stock Ticker')
-        score = ranked_text.encode(text='score').properties(title='Upvotes')
-        title = ranked_text.encode(text='title').properties(title='Submission Title')
+        created = ranked_text.encode(
+            text='date_str'
+        ).properties(
+            title='Created Date',
+        )
+        ticker = ranked_text.encode(
+            text='ticker'
+        ).properties(
+            title='Stock Ticker',
+        )
+        score = ranked_text.encode(text='score'
+                                   ).properties(
+            title='Upvotes',
+        )
+        title = ranked_text.encode(text='title'
+                                   ).properties(
+            title='Submission Title',
+        )
         # url = ranked_text.encode(text='built_url').properties(title='URL')
 
         # Combine data tables
@@ -213,21 +273,29 @@ class StockTicker(ModelBase):
     def model(self, df):
         """unused. aggregates and counts
         """
-        return self.clean(df.groupby(["ticker", "title/submission"])["ticker"].count().unstack('title/submission').reset_index()
-                          )
+        return self.clean(
+            df.groupby(["ticker", "title/submission"])["ticker"].count()
+            .unstack('title/submission').reset_index()
+        )
 
     def transform(self, df):
         df = self.explode(df, self.ticker_cols)
 
-        main_cols = ["id", "title", "permalink", "built_url", "score", "created"]
+        main_cols = ["id", "title", "permalink",
+                     "built_url", "score", "created"]
 
-        title_df = df[[*main_cols, "title_ticker"]].drop_duplicates(subset=['id', 'title_ticker'])
+        title_df = df[[*main_cols, "title_ticker"]
+                      ].drop_duplicates(subset=['id', 'title_ticker'])
         title_df["title/submission"] = "title"
         title_df = title_df.rename({"title_ticker": "ticker"}, axis=1)
 
-        submission_df = df[[*main_cols, "submission_text_ticker"]].drop_duplicates(subset=['id', 'submission_text_ticker'])
+        submission_df = df[[*main_cols, "submission_text_ticker"]
+                           ].drop_duplicates(
+            subset=['id', 'submission_text_ticker']
+        )
         submission_df["title/submission"] = "submission"
-        submission_df = submission_df.rename({"submission_text_ticker": "ticker"}, axis=1)
+        submission_df = submission_df.rename(
+            {"submission_text_ticker": "ticker"}, axis=1)
 
         plot_df = pd.concat([title_df, submission_df], ignore_index=True)
         return self.filter_count(plot_df, "ticker", 1)

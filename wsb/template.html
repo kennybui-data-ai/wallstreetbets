@@ -18,7 +18,9 @@
     </p>
     <img src="img/brrr.gif" alt="money printer go brr gif" />
     <script type="text/javascript">
-      vegaEmbed('#vis1', {{ StockTicker }}).catch(console.error);
+    // remember to copy {"loader": {"target": "_blank"}} to the other charts once you are ready to render them
+    // this allows links to open in new tab
+      vegaEmbed('#vis1', {{ StockTicker }}, {"loader": {"target": "_blank"}}).catch(console.error);
       vegaEmbed('#vis2', {{ DueDiligence }}).catch(console.error);
       vegaEmbed('#vis3', {{ DailyDiscussion }}).catch(console.error);
     </script>
@@ -38,6 +40,18 @@
         color: yellow;
         background-color: transparent;
         text-decoration: underline;
+      }
+
+      form.vega-bindings {
+        position: absolute;
+        /* left: 0px; */
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        top: 0px;
+        left: 4%;
+        /* margin-right: -50%; */
+        background-color: black;
       }
     </style>
 </body>

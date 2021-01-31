@@ -13,7 +13,8 @@ pp = pprint.PrettyPrinter(indent=4)
 
 class ModelBase:
     """Superclass for models.py
-    PRAW Subreddit: https://praw.readthedocs.io/en/latest/code_overview/models/subreddit.html#praw.models.Subreddit
+    PRAW Subreddit:
+    https://praw.readthedocs.io/en/latest/code_overview/models/subreddit.html#praw.models.Subreddit
     """
 
     def __init__(self, subreddit, timefilter, limit, output,
@@ -28,7 +29,8 @@ class ModelBase:
         :type limit: int
         :param output: output folder
         :type output: str
-        :param sort: Can be one of: relevance, hot, top, new, comments. (default: hot)
+        :param sort: Can be one of: relevance, hot, top, new, comments.
+                    (default: hot)
         :type sort: str
         :param search_query: search in subreddit
         :type search_query: str
@@ -51,7 +53,36 @@ class ModelBase:
         self.nasdaq_ticker_df = pd.read_csv(self.nasdaq_ticker_path)
         self.nasdaq_tickers = self.nasdaq_ticker_df["Symbol"].tolist()
 
-        self.tickers = self.nyse_tickers + self.nasdaq_tickers
+        self.words = ["A", "AF", "ALL", "ALLY", "AM", "AN", "ANY", "AT", "ARE",
+                      "AWAY", "ACAT", "AG", "AGO", "AVG", "ADX",
+                      "B", "BABY", "BIG", "BLUE",
+                      "C", "CALL", "CEO", "CASH",
+                      "D", "DM", "DO", "DD",
+                      "E", "ELON", "EOD", "EV", "ELSE",
+                      "F", "FI", "FLY", "FOR", "FUEL", "FREE", "FULL", "FUND",
+                      "G", "GAIN", "GAME", "GF", "GMT", "GOOD", "GS", "GOLD",
+                      "H", "HAS", "HE", "HEAR", "HERO", "HF", "HOT",
+                      "I", "IM", "ING", "IT", "ITT", "III", "IRS",
+                      "K",
+                      "L", "LINE", "LIVE", "LL", "LONG", "LOOK", "LOW",
+                      "M", "MM", "MORE", "MY", "MAN",
+                      "N", "NEWS", "NICE", "NOW",
+                      "O", "ONE", "OUT", "OMG",
+                      "P", "PM", "POST", "PSA", "PT", "PE", "PER", "PAY",
+                      "Q",
+                      "R", "RH", "RE",
+                      "S", "SC", "SHIP", "SO", "STAY", "SEE", "SAVE", "SD",
+                      "SOL",
+                      "T", "TD", "TDA", "TIME", "TOO", "TV", "TA",
+                      "USA",
+                      "WIN",
+                      "X",
+                      "Y",
+                      "Z",
+        ]
+
+        self.tickers = [x for x in self.nyse_tickers +
+                        self.nasdaq_tickers if x not in set(self.words)]
         self.ticker_cols = ["title_ticker", "submission_text_ticker"]
 
         self.datetime_now = dt.now()
@@ -109,9 +140,10 @@ class ModelBase:
         """
         no_print_attributes = {"nyse_tickers", "nyse_ticker_df",
                                "nasdaq_tickers", "nasdaq_ticker_df",
-                               "tickers",
-                               "chart_template"}
-        pp.pprint(["{}: {}".format(a, getattr(self, a)) for a in vars(self) if a not in no_print_attributes]
+                               "tickers", "words",
+                               "chart_template", }
+        pp.pprint(["{}: {}".format(a, getattr(self, a)) for a in vars(self)
+                   if a not in no_print_attributes]
                   )
 
         # https://praw.readthedocs.io/en/latest/code_overview/models/subreddit.html?highlight=subreddit#praw.models.Subreddit.search
@@ -233,35 +265,10 @@ class ModelBase:
         ticker_pattern = "(\$*[A-Z]{1,5})(?=[\s\.\?\!\,])+"
         # .str.join(', ').replace(r'^\s*$', np.nan, regex=True)
 
-        words = {"A", "AF", "ALL", "ALLY", "AM", "AN", "ANY", "AT", "ARE",
-                 "B", "BABY", "BIG",
-                 "C", "CALL", "CEO",
-                 "D", "DM", "DO", "DD",
-                 "E", "ELON", "EOD",
-                 "F", "FI", "FLY", "FOR", "FUEL",
-                 "G", "GAIN", "GAME", "GF", "GMT", "GOOD",
-                 "H", "HAS", "HE", "HEAR", "HERO", "HF", "HOT",
-                 "I", "IM", "ING", "IT",
-                 "K",
-                 "L", "LINE", "LIVE", "LL", "LONG", "LOOK", "LOW",
-                 "M", "MM", "MORE", "MY",
-                 "N", "NEWS", "NICE", "NOW",
-                 "O", "ONE", "OUT",
-                 "P", "PM", "POST", "PSA", "PT",
-                 "Q",
-                 "R", "RH", "RE",
-                 "S", "SC", "SHIP", "SO", "STAY", "SEE",
-                 "T", "TD", "TDA", "TIME", "TOO", "TV", "TA",
-                 "USA",
-                 "WIN",
-                 "X"
-                 }
-        ticks = [x for x in self.tickers if x not in words]
-
         df["title_regex"] = df['title'].str.findall(ticker_pattern)
         df['title_ticker'] = [
             [val.lstrip("$")
-             for val in sublist if val.lstrip("$") in ticks]
+             for val in sublist if val.lstrip("$") in set(self.tickers)]
             for sublist in df['title_regex'].values
         ]
 
@@ -269,7 +276,7 @@ class ModelBase:
             ticker_pattern)
         df['submission_text_ticker'] = [
             [val.lstrip("$")
-             for val in sublist if val.lstrip("$") in ticks]
+             for val in sublist if val.lstrip("$") in set(self.tickers)]
             for sublist in df['submission_text_regex'].values
         ]
 
@@ -294,13 +301,15 @@ class ModelBase:
         return df[df.groupby(col)[col].transform('count') > min]
 
     def plot_tickers(self, df):
-        title_df = df[["id", "title", "built_url", "title_ticker"]].drop_duplicates(
-            subset=['id', 'title_ticker'])
+        title_df = df[["id", "title", "built_url", "title_ticker"]
+                      ].drop_duplicates(subset=['id', 'title_ticker'])
         title_df["title/submission"] = "title"
         title_df = title_df.rename({"title_ticker": "ticker"}, axis=1)
 
-        submission_df = df[["id", "title", "built_url", "submission_text_ticker"]].drop_duplicates(
-            subset=['id', 'submission_text_ticker'])
+        submission_df = df[["id", "title", "built_url",
+                            "submission_text_ticker"]
+                           ].drop_duplicates(
+                               subset=['id', 'submission_text_ticker'])
         submission_df["title/submission"] = "submission"
         submission_df = submission_df.rename(
             {"submission_text_ticker": "ticker"}, axis=1)
@@ -311,7 +320,8 @@ class ModelBase:
             11)
 
         # plot here
-        plot_df.groupby(["ticker", "title/submission"])["ticker"].count().unstack('title/submission').fillna(0)\
+        plot_df.groupby(["ticker", "title/submission"])["ticker"].count()\
+            .unstack('title/submission').fillna(0)\
             .plot(kind='bar', stacked=True)
 
         plt.savefig(self.semantic_output, bbox_inches="tight")
