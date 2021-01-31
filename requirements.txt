@@ -1,13 +1,17 @@
 requests
 praw
+jinja2
+
 pandas
 matplotlib
+
 altair
 vega_datasets
+
 # pandas-highcharts # this library not maintained
 # python-highcharts # official release has highchart version conflict
 # also this problem https://github.community/t/slidy-javascript-doesnt-work-on-github-pages/10301
-git+https://github.com/kennybui-data-ai/python-highcharts#egg=python-highcharts
+# git+https://github.com/kennybui-data-ai/python-highcharts#egg=python-highcharts # using altair now
 
 # jupyter
 ipykernel  

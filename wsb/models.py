@@ -2,7 +2,17 @@
 # idea is each model might potentially implement unique way of analyzing the data
 # also want to support NLP sentiment analysis in the future
 
-from base import ModelBase, pd, np
+from base import ModelBase, pd
+import altair as alt
+
+# use with caution: https://altair-viz.github.io/user_guide/faq.html#maxrowserror-how-can-i-plot-large-datasets
+# alt.data_transformers.disable_max_rows()
+
+# https://github.com/altair-viz/altair/issues/742
+# alt.renderers.set_embed_options(theme='dark')  # only for jupyter
+
+# alt.themes.enable("fivethirtyeight")
+alt.themes.enable("dark")
 
 
 class DueDiligence(ModelBase):
@@ -72,144 +82,150 @@ class StockTicker(ModelBase):
         kwargs["search_query"] = ""
         super().__init__(**kwargs)
 
-    def drilldown_chart(self):
-        H = self.highchart
-        df = pd.read_csv(self.curated_output, sep=self.delim,
+    def chart(self):
+        parse_dates = ["created", "last_updated"]
+        df = pd.read_csv(self.curated_output, sep=self.delim, parse_dates=parse_dates,
                          converters={
                              "title_ticker": lambda x: self.convert_list(x),
                              "submission_text_ticker": lambda x: self.convert_list(x)
                          }
                          )
 
-        df = self.transform(df)
+        df = self.clean(
+            self.transform(df)
+        )
 
-        agg_df = self.clean(df[["ticker", "id"]].groupby(["ticker"]).nunique().reset_index())
-        agg_df["drilldown"] = agg_df["ticker"]
-        data = agg_df.rename({"id": "y", "ticker": "name"}, axis=1).to_dict('records')
+        df["date_str"] = df["created"].map(lambda x: x.strftime("%Y-%m-%d %H:%M"))
+        df["date"] = df["created"].map(lambda x: x.strftime("%Y-%m-%d"))
+        df["date2"] = df["created"].map(lambda x: x.strftime("%Y-%m-%d"))
+        data_start = df["date"].min()
+        data_end = df["date"].max()
 
-        options = {
-            'chart': {
-                'type': 'column'
-            },
-            'title': {
-                'text': 'Stock Tickers mentioned on wallstreetbets'
-            },
-            'subtitle': {
-                'text': 'Click the columns to view versions. Source: <a href="https://www.reddit.com/r/wallstreetbets/">wallstreetbets on Reddit</a>.'
-            },
-            'xAxis': {
-                'type': 'category'
-            },
-            'yAxis': {
-                'title': {
-                    'text': 'number of mentions'
-                }
+        # brush = alt.selection(type='interval')
 
-            },
-            'legend': {
-                'enabled': False
-            },
-            'plotOptions': {
-                'series': {
-                    'borderWidth': 0,
-                    'dataLabels': {
-                        'enabled': True,
-                        'format': '{point.y:.1f}'
-                    }
-                }
-            },
+        # DATETIME RANGE
+        # https://github.com/altair-viz/altair/issues/2008#issuecomment-621428053
+        range_start = alt.binding(input="date")
+        range_end = alt.binding(input="date")
+        select_range_start = alt.selection_single(name="start", fields=["date"], bind=range_start, init={"date": data_start})
+        select_range_end = alt.selection_single(name="end", fields=["date"], bind=range_end, init={"date": data_end})
+        # slider = alt.binding_range(min=self.timestamp(min(self.datelist)), max=self.timestamp(max(self.datelist)), step=1, name='Created Date')
+        # slider_selection = alt.selection_single(name="SelectorName", fields=['created_date'],
+        #                                         bind=slider, init={'created': self.timestamp('2021-01-01')})
 
-            'tooltip': {
-                'headerFormat': '<span style="font-size:11px">{series.name}</span><br>',
-                'pointFormat': '<span style="color:{point.color}">{point.name}</span>: <b>{point.y:.2f}</b> mentions<br/>'
-            },
+        selector = alt.selection_single(
+            empty='all', fields=['ticker']
+        )
 
-        }
+        base = alt.Chart(df).transform_filter(
+            # slider_selection
+            (alt.datum.date2 >= select_range_start.date) & (alt.datum.date2 <= select_range_end.date)
+        ).add_selection(
+            selector,
+            # slider_selection,
+            select_range_start, select_range_end
+        )
 
-        H.set_dict_options(options)
-        H.add_data_set(data, 'column', "Tickers", colorByPoint=True)
+        bars = base.mark_bar().encode(
+            # https://stackoverflow.com/questions/52877697/order-bar-chart-in-altair
+            x=alt.X('ticker',
+                    sort=alt.EncodingSortField(field="ticker", op="count", order='descending'),
+                    axis=alt.Axis(title='Stock Tickers')
+                    ),
+            y=alt.Y("count(id)",
+                    axis=alt.Axis(title='Number of Mentions')
+                    ),
+            color=alt.condition(selector, 'id:O', alt.value('lightgray'), legend=None),
+        ).properties(
+            width=1700,
+            height=650
+        )
 
-        # same transformation used in stack_column_chart
-        drill_df = self.model(df)
+        # base chart for data tables
+        # href: https://altair-viz.github.io/gallery/scatter_href.html
+        ranked_text = base.transform_calculate(
+            url='https://www.reddit.com' + alt.datum.permalink
+        ).mark_text(
+            align='left',
+            dx=-15,
+            dy=0,
+            color="white"
+        ).encode(
+            y=alt.Y('row_number:O', axis=None),
+            href='url:N',
+            tooltip=['url:N']
+            # color=alt.condition(selector,'id:O',alt.value('lightgray'),legend=None),
+        ).transform_window(
+            # groupby=["ticker"],  # causes overlap
+            # https://altair-viz.github.io/user_guide/generated/core/altair.SortField.html#altair.SortField
+            sort=[
+                alt.SortField("created", "descending"),
+                alt.SortField("score", "descending"),
+            ],
+            row_number='row_number()'
+        ).transform_filter(
+            selector
+        ).transform_window(
+            rank='rank(row_number)'
+        ).transform_filter(
+            # only shows up to 20
+            alt.datum.rank < 20
+        ).properties(
+            width=30,
+            height=300
+        )
 
-        for row in drill_df.itertuples():
-            temp_data = [
-                ["submission_text", row.submission],
-                ["title", row.title]
-            ]
-            H.add_drilldown_data_set(temp_data, 'column', row.ticker.strip(), name=row.ticker.strip())
+        # Data Tables
+        created = ranked_text.encode(text='date_str').properties(title='Created Date')
+        ticker = ranked_text.encode(text='ticker').properties(title='Stock Ticker')
+        score = ranked_text.encode(text='score').properties(title='Upvotes')
+        title = ranked_text.encode(text='title').properties(title='Submission Title')
+        # url = ranked_text.encode(text='built_url').properties(title='URL')
 
-        H.save_file(f"{self.semantic_folder}/drilldown")
-        return
+        # Combine data tables
+        text = alt.hconcat(created, ticker, score, title)
 
-    def stack_column_chart(self):
-        H = self.highchart
-        df = pd.read_csv(self.curated_output, sep=self.delim,
-                         converters={
-                             "title_ticker": lambda x: self.convert_list(x),
-                             "submission_text_ticker": lambda x: self.convert_list(x)
-                         }
-                         )
+        # Build chart
+        chart = alt.vconcat(
+            bars,
+            text,
+            # autosize="fit"
+        ).resolve_legend(
+            color="independent"
+        )
 
-        df = self.transform(df)
-        df = self.model(df)
-
-        options = {
-            'title': {
-                'text': 'Stock Ticker mentions on wallstreetbets'
-            },
-
-            'xAxis': {
-                # 'categories': ['Apples', 'Oranges', 'Pears', 'Grapes', 'Bananas']
-                'categories': df["ticker"].tolist()
-            },
-
-            'yAxis': {
-                'allowDecimals': False,
-                'min': 0,
-                'title': {
-                    'text': 'Number of Mentions'
-                }
-            },
-
-            'tooltip': {
-                'formatter': "function () {\
-                                return '<b>' + this.x + '</b><br/>' +\
-                                    this.series.name + ': ' + this.y + '<br/>' +\
-                                    'Total: ' + this.point.stackTotal;\
-                            }"
-            },
-            'plotOptions': {
-                'column': {
-                    'stacking': 'normal'
-                }
-            }
-        }
-
-        H.set_dict_options(options)
-
-        H.add_data_set(df["submission"].tolist(), "column", "submission text")
-        H.add_data_set(df["title"].tolist(), "column", "title of submission")
-        H.save_file(f"{self.semantic_folder}/columnstack")
+        with open(self.html_output, "w", encoding="utf-8") as f:
+            # jinja2 to render
+            f.write(self.chart_template.render(
+                vega_version=alt.VEGA_VERSION,
+                vegalite_version=alt.VEGALITE_VERSION,
+                vegaembed_version=alt.VEGAEMBED_VERSION,
+                StockTicker=str(chart.to_json(indent=None))
+            ))
         return
 
     def clean(self, df):
         """clean ticker rows that are empty
         """
+        df = df.drop_duplicates(subset=['id'])
         return df[df['ticker'].str.strip().astype(bool)]
 
     def model(self, df):
+        """unused. aggregates and counts
+        """
         return self.clean(df.groupby(["ticker", "title/submission"])["ticker"].count().unstack('title/submission').reset_index()
                           )
 
     def transform(self, df):
         df = self.explode(df, self.ticker_cols)
 
-        title_df = df[["id", "title", "built_url", "title_ticker"]].drop_duplicates(subset=['id', 'title_ticker'])
+        main_cols = ["id", "title", "permalink", "built_url", "score", "created"]
+
+        title_df = df[[*main_cols, "title_ticker"]].drop_duplicates(subset=['id', 'title_ticker'])
         title_df["title/submission"] = "title"
         title_df = title_df.rename({"title_ticker": "ticker"}, axis=1)
 
-        submission_df = df[["id", "title", "built_url", "submission_text_ticker"]].drop_duplicates(subset=['id', 'submission_text_ticker'])
+        submission_df = df[[*main_cols, "submission_text_ticker"]].drop_duplicates(subset=['id', 'submission_text_ticker'])
         submission_df["title/submission"] = "submission"
         submission_df = submission_df.rename({"submission_text_ticker": "ticker"}, axis=1)
 
@@ -231,6 +247,5 @@ class StockTicker(ModelBase):
         self.save(df)
 
         # self.plot_tickers(df)  # basic jpg. we're using highchart for python
-        self.stack_column_chart()
-        self.drilldown_chart()
+        self.chart()
         return

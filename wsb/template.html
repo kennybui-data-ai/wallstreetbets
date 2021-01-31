@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <script src="https://cdn.jsdelivr.net/npm/vega@{{ vega_version }}"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vega-lite@{{ vegalite_version }}"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vega-embed@{{ vegaembed_version }}"></script>
+</head>
+<body>
+  <Title>money printer go brrrrrrrrrrrr</Title>
+  <img src="img/jpow.gif" alt="jpow gif" />
+  <h1>💎👐🚀🌙</h1>
+    <p>We're using PRAW :)
+      <br>
+      Checkout the charts:
+      <div id="vis1"></div>
+      <div id="vis2"></div>
+      <div id="vis3"></div>
+    </p>
+    <img src="img/brrr.gif" alt="money printer go brr gif" />
+    <script type="text/javascript">
+      vegaEmbed('#vis1', {{ StockTicker }}).catch(console.error);
+      vegaEmbed('#vis2', {{ DueDiligence }}).catch(console.error);
+      vegaEmbed('#vis3', {{ DailyDiscussion }}).catch(console.error);
+    </script>
+    <style type="text/css">
+      body {
+        color: whitesmoke;
+        background-color: #000000
+      }
+  
+      a:link, a:visited {
+        color: pink;
+        background-color: transparent;
+        text-decoration: none;
+      }
+  
+      a:hover, a:active {
+        color: yellow;
+        background-color: transparent;
+        text-decoration: underline;
+      }
+    </style>
+</body>
+</html>

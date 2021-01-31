@@ -1,13 +1,12 @@
 # superclasses
 
 import pandas as pd
-import numpy as np
+# import numpy as np
 from datetime import datetime as dt
 import pprint
 from pathlib import Path
 from matplotlib import pyplot as plt
-from highcharts import Highchart
-# from ast import literal_eval
+from jinja2 import Template
 
 pp = pprint.PrettyPrinter(indent=4)
 
@@ -59,15 +58,16 @@ class ModelBase:
         self.date_folder = self.datetime_now.strftime("%Y/%m/%d")
         # self.time_str = self.datetime_now.strftime("%H%M%S")
 
+        self.html_template = "template.html"
+        with open(self.html_template, "r", encoding="utf-8") as f:
+            self.chart_template = Template(f.read())
+
+        self.html_output = "../index.html"
+
     def _get_name(self):
         """get class name
         """
         return self.__class__.__name__
-
-    @property
-    def highchart(self):
-        # return Highchart(width=850, height=600)
-        return Highchart()
 
     @staticmethod
     def _make_dir(folder):
@@ -108,7 +108,9 @@ class ModelBase:
         :type comments: bool
         """
         no_print_attributes = {"nyse_tickers", "nyse_ticker_df",
-                               "nasdaq_tickers", "nasdaq_ticker_df", "tickers"}
+                               "nasdaq_tickers", "nasdaq_ticker_df",
+                               "tickers",
+                               "chart_template"}
         pp.pprint(["{}: {}".format(a, getattr(self, a)) for a in vars(self) if a not in no_print_attributes]
                   )
 
@@ -230,10 +232,36 @@ class ModelBase:
         # https://stackoverflow.com/questions/57483859/pandas-finding-matchany-between-list-of-strings-and-df-column-valuesas-list
         ticker_pattern = "(\$*[A-Z]{1,5})(?=[\s\.\?\!\,])+"
         # .str.join(', ').replace(r'^\s*$', np.nan, regex=True)
+
+        words = {"A", "AF", "ALL", "ALLY", "AM", "AN", "ANY", "AT", "ARE",
+                 "B", "BABY", "BIG",
+                 "C", "CALL", "CEO",
+                 "D", "DM", "DO",
+                 "E", "ELON", "EOD",
+                 "F", "FI", "FLY", "FOR", "FUEL",
+                 "G", "GAIN", "GAME", "GF", "GMT", "GOOD",
+                 "H", "HAS", "HE", "HEAR", "HERO", "HF", "HOT",
+                 "I", "IM", "ING", "IT",
+                 "K",
+                 "L", "LINE", "LIVE", "LL", "LONG", "LOOK", "LOW",
+                 "M", "MM", "MORE", "MY",
+                 "N", "NEWS", "NICE", "NOW",
+                 "O", "ONE", "OUT",
+                 "P", "PM", "POST", "PSA", "PT",
+                 "Q",
+                 "R", "RH", "RE",
+                 "S", "SC", "SHIP", "SO", "STAY", "SEE",
+                 "T", "TD", "TDA", "TIME", "TOO", "TV", "TA",
+                 "USA",
+                 "WIN",
+                 "X"
+                 }
+        ticks = [x for x in self.tickers if x not in words]
+
         df["title_regex"] = df['title'].str.findall(ticker_pattern)
         df['title_ticker'] = [
             [val.lstrip("$")
-             for val in sublist if val.lstrip("$") in self.tickers]
+             for val in sublist if val.lstrip("$") in ticks]
             for sublist in df['title_regex'].values
         ]
 
@@ -241,7 +269,7 @@ class ModelBase:
             ticker_pattern)
         df['submission_text_ticker'] = [
             [val.lstrip("$")
-             for val in sublist if val.lstrip("$") in self.tickers]
+             for val in sublist if val.lstrip("$") in ticks]
             for sublist in df['submission_text_regex'].values
         ]
 
