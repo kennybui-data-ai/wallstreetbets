@@ -236,7 +236,7 @@ class ModelBase:
         words = {"A", "AF", "ALL", "ALLY", "AM", "AN", "ANY", "AT", "ARE",
                  "B", "BABY", "BIG",
                  "C", "CALL", "CEO",
-                 "D", "DM", "DO",
+                 "D", "DM", "DO", "DD",
                  "E", "ELON", "EOD",
                  "F", "FI", "FLY", "FOR", "FUEL",
                  "G", "GAIN", "GAME", "GF", "GMT", "GOOD",
