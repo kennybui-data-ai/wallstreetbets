@@ -71,7 +71,7 @@ Register for [Reddit API](https://github.com/reddit-archive/reddit/wiki/OAuth2) 
 Use [PRAW](https://github.com/praw-dev/praw) to extract from Reddit ([docs](https://praw.readthedocs.io/en/latest/index.html))
 
 # stock ticker list
-nyse-listed.csv downloaded from [here](https://datahub.io/core/nyse-other-listings#data)
+nyse-listed.csv downloaded from [here](https://datahub.io/core/nyse-other-listings#data)  
 nasdaq-list.csv downloaded from [here](https://datahub.io/core/nasdaq-listings)
 
 # ~~python-highchart problems~~
