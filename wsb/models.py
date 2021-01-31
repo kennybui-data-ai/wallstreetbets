@@ -137,8 +137,8 @@ class StockTicker(ModelBase):
                     ),
             color=alt.condition(selector, 'id:O', alt.value('lightgray'), legend=None),
         ).properties(
-            width=1700,
-            height=650
+            width=1400,
+            height=600
         )
 
         # base chart for data tables

@@ -2,7 +2,8 @@
 only💎👐allowed🚀🌙
 
 TODO:
-- Filter when charting. move words for extract tickers into base attribute
+- move slider
+- Filter tickers when charting. move words for extract tickers into base attribute
 - Due Diligence with Date binding
 - Daily Discussions: Tickers with Comments
 
