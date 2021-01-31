@@ -1,6 +1,10 @@
 # wallstreetbets
 only💎👐allowed🚀🌙
 
+TODO:
+- Due Diligence with Date binding
+- Daily Discussions: Tickers with Comments
+
 <a href="https://brrr.money/"><img src="./img/moneyprinter.gif" width="75" height="75" /></a>  
 https://kennybui-data-ai.github.io/wallstreetbets/
 

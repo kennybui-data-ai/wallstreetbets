@@ -207,7 +207,7 @@ class StockTicker(ModelBase):
     def clean(self, df):
         """clean ticker rows that are empty
         """
-        df = df.drop_duplicates(subset=['id'])
+        df = df.drop_duplicates(subset=['id', 'ticker'])
         return df[df['ticker'].str.strip().astype(bool)]
 
     def model(self, df):
