@@ -3,6 +3,7 @@ only💎👐allowed🚀🌙
 
 TODO:
 - move slider
+- fix data table boxes
 - Filter tickers when charting. move words for extract tickers into base attribute
 - Due Diligence with Date binding
 - Daily Discussions: Tickers with Comments
