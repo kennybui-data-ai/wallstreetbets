@@ -1,5 +1,6 @@
 # wallstreetbets
 only💎👐allowed🚀🌙
+
 <a href="https://brrr.money/"><img src="./img/moneyprinter.gif" width="75" height="75" /></a>  
 https://kennybui-data-ai.github.io/wallstreetbets/
 
