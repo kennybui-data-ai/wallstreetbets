@@ -1,7 +1,5 @@
-# wallstreetbets
-only💎👐allowed🚀🌙
-
-<a href="https://brrr.money/"><img src="./img/moneyprinter.gif" width="75" height="75" /></a>  
+# wallstreetbets <a href="https://brrr.money/"><img src="./img/moneyprinter.gif" width="25" height="25" /></a>  
+only💎👐allowed🚀🌙  
 https://kennybui-data-ai.github.io/wallstreetbets/
 
     .
@@ -16,10 +14,6 @@ https://kennybui-data-ai.github.io/wallstreetbets/
     |   └── rewrite_pretty_json.py    # rewrite json with proper indent. use if json prints in single line.
     ├── LICENSE
     └── README.md
-
-# TODO:
-- [ ] Due Diligence with Date binding
-- [ ] Daily Discussions: Tickers with Comments
 
 # usage
 ```

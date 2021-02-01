@@ -1,58 +1,87 @@
 <!DOCTYPE html>
 <html>
+
 <head>
   <script src="https://cdn.jsdelivr.net/npm/vega@{{ vega_version }}"></script>
   <script src="https://cdn.jsdelivr.net/npm/vega-lite@{{ vegalite_version }}"></script>
-  <script src="https://cdn.jsdelivr.net/npm/vega-embed@6.15.1"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vega-embed@{{ vegaembed_version }}"></script>
 </head>
+
 <body>
-  <Title>money printer go brrrrrrrrrrrr</Title>
+  <Title>money printer go brrrrrr</Title>
   <img src="img/jpow.gif" alt="jpow gif" />
-  <h1>💎👐🚀🌙</h1>
-    <p>We're using PRAW :)<br>
-      Checkout the charts:
-      <h2>Stock Ticker mentions on r/wallstreetbets</h2>
-      <div id="vis1"></div><br>
-      <h2>Top Due Diligence (DD)</h2>
-      <div id="vis2"></div><br>
-      <h2>Stock Tickers in Daily Discussion comments</h2>
-      <div id="vis3"></div><br>
-    </p>
-    <img src="img/brrr.gif" alt="money printer go brr gif" />
-    <script type="text/javascript">
+  <h1>💎👐🚀🌙 Last Updated: {{ last_updated }}</h1>
+  <h3><i>obligatory this is not financial advice</i></h3>
+  <p>
+    Do your research. You can start with
+    <a href="https://www.barchart.com/options/most-active/stocks" target="_blank">this chart for stock activity</a>
+    (order by <i>Options Vol</i> column).
+  </p>
+  <p>
+    Many thanks and blessings to:
+  <ul>
+    <li><a href="https://www.reddit.com/r/wallstreetbets/" target="_blank">r/wallstreetbets ❤️</a></li>
+    <li><a href="https://praw.readthedocs.io/en/latest/index.html" target="_blank">PRAW</a></li>
+    <li><a href="https://pandas.pydata.org/docs/reference/index.html#api" target="_blank">Pandas</a></li>
+    <li><a href="https://altair-viz.github.io/index.html" target="_blank">Altair</a></li>
+    <li><a href="https://github.com/vega/vega-embed" target="_blank">vega-embed</a></li>
+  </ul>
+  </p>
+  <hr>
+  <p>
+  <h1>Stock Ticker mentions on r/wallstreetbets</h1>
+  <div id="vis1"></div>
+  </p>
+  <hr>
+  <p>
+  <h1>Top Due Diligence (DD)</h1>
+  <div id="vis2"></div>
+  </p>
+  <hr>
+  <p>
+  <h1>Stock Tickers mentions in Daily Discussion comments</h1>
+  <div id="vis3"></div><br><br>
+  </p>
+  <hr>
+  <img src="img/brrr.gif" alt="money printer go brr gif" />
+  <script type="text/javascript">
     // , {"loader": {"target": "_blank"}} in opt argument of vegaEmbed
     // this allows links to open in new tab
-      vegaEmbed('#vis1', {{ StockTicker }}).catch(console.error);
-      vegaEmbed('#vis2', {{ DueDiligence }}).catch(console.error);
-      vegaEmbed('#vis3', {{ DailyDiscussion }}).catch(console.error);
-    </script>
-    <style type="text/css">
-      body {
-        color: whitesmoke;
-        background-color: #000000
-      }
-  
-      a:link, a:visited {
-        color: pink;
-        background-color: transparent;
-        text-decoration: none;
-      }
-  
-      a:hover, a:active {
-        color: yellow;
-        background-color: transparent;
-        text-decoration: underline;
-      }
+    vegaEmbed('#vis1', {{ stock_ticker }}).catch(console.error);
+    vegaEmbed('#vis2', {{ due_diligence }}).catch(console.error);
+    vegaEmbed('#vis3', {{ daily_discussion }}).catch(console.error);
+  </script>
+  <style type="text/css">
+    body {
+      color: whitesmoke;
+      background-color: #000000;
+      font-family: "Courier New", monospace;
+    }
 
-      form.vega-bindings {
-        position: absolute;
-        /* display: flex;
+    a:link,
+    a:visited {
+      color: pink;
+      background-color: transparent;
+      text-decoration: none;
+    }
+
+    a:hover,
+    a:active {
+      color: yellow;
+      background-color: transparent;
+      text-decoration: underline;
+    }
+
+    form.vega-bindings {
+      position: absolute;
+      /* display: flex;
         justify-content: center;
         align-items: center; */
-        top: 0px;
-        right: 2.5%;
-        background-color: black;
-      }
-    </style>
+      top: 0px;
+      right: 2.5%;
+      background-color: black;
+    }
+  </style>
 </body>
+
 </html>

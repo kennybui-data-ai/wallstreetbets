@@ -62,6 +62,8 @@ class MoneyPrinter:
             # tendies is main method of model
             model.tendies()
 
+        models.HTML(self.output).tendies()
+
         print("BRRRRRR")
 
 
