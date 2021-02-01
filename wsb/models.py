@@ -19,13 +19,13 @@ import altair as alt
 
 
 def dark_href():
+    # custom theme. allows opening links in new tab
     return {
         "usermeta": {
             "embedOptions": {
                 "theme": "dark",
-                # loader option for opening link in new tab. it is Vega Loader
-                # not working as expected. keep here for now
-                # modified the vegaEmbed in html as backup
+                # loader option for opening link in new tab
+                # fixed in vega-embed v6.15.1
                 "loader": {"target": "_blank"}
             }
         }
@@ -108,31 +108,26 @@ class StockTicker(ModelBase):
         super().__init__(**kwargs)
 
     def chart(self):
-        parse_dates = ["created", "last_updated"]
-        df = pd.read_csv(
-            self.curated_output, sep=self.delim,
-            parse_dates=parse_dates,
-            converters={
-                "title_ticker": lambda x: self.convert_list(x),
-                "submission_text_ticker": lambda x: self.convert_list(x)
-            }
-        )
-
         df = self.clean(
-            self.transform(df)
+            self.transform(
+                self.read_curated()
+            )
         )
 
-        df = df.query(f'ticker not in list({self.words})')
+        # I don't think this even fucking works but whatever. cheesed
+        df = df.query("ticker not in @self.words")
 
+        # used in data table
         df["date_str"] = df["created"].map(
             lambda x: x.strftime("%Y-%m-%d %H:%M")
-            )
+        )
+        # used for date filters
         df["date"] = df["created"].map(lambda x: x.strftime("%Y-%m-%d"))
         df["date2"] = df["created"].map(lambda x: x.strftime("%Y-%m-%d"))
         data_start = df["date"].min()
         data_end = df["date"].max()
 
-        # DATETIME RANGE
+        # DATETIME RANGE FILTERS
         # https://github.com/altair-viz/altair/issues/2008#issuecomment-621428053
         range_start = alt.binding(input="date")
         range_end = alt.binding(input="date")
@@ -144,6 +139,8 @@ class StockTicker(ModelBase):
             name="end", fields=["date"], bind=range_end,
             init={"date": data_end}
         )
+
+        # slider timestamp is javascript timestamp. not human readable
         # slider = alt.binding_range(
         #     min=self.timestamp(min(self.datelist)),
         #     max=self.timestamp(max(self.datelist)),
@@ -154,37 +151,70 @@ class StockTicker(ModelBase):
         #     bind=slider, init={'created': self.timestamp('2021-01-01')}
         # )
 
-        # brush = alt.selection(type="interval", encodings=['x'])
-        selector = alt.selection_single(
-            empty='all', fields=['ticker']
+        # count slider filter
+        max_count = df.groupby(["ticker"])["ticker"].count().max()
+        slider_max = alt.binding_range(min=0,
+                                       max=max_count,
+                                       step=1)
+        slider_min = alt.binding_range(min=0,
+                                       max=max_count,
+                                       step=1)
+        select_max_count = alt.selection_single(
+            name='ticker_max',
+            fields=['count'],
+            bind=slider_max,
+            init={"count": max_count}
+        )
+        select_min_count = alt.selection_single(
+            name='ticker_min',
+            fields=['count'],
+            bind=slider_min,
+            init={"count": 0}
         )
 
-        base = alt.Chart(df).transform_filter(
+        # zoom = alt.selection_interval(bind='scales')
+        selector = alt.selection_single(
+            empty='all',
+            fields=['ticker']
+        )
+
+        base = alt.Chart(df.reset_index()).transform_filter(
             # slider_selection
             (alt.datum.date2 >= select_range_start.date) & (
                 alt.datum.date2 <= select_range_end.date)
         ).add_selection(
-            selector, 
-            # brush,
-            # slider_selection,
-            select_range_start, select_range_end
+            selector,
+            select_range_start,
+            select_range_end,
+            select_max_count,
+            select_min_count,
         )
 
-        bars = base.mark_bar().encode(
-            # https://stackoverflow.com/questions/52877697/order-bar-chart-in-altair
+        # BAR CHART
+        # https://stackoverflow.com/questions/52385214/how-to-select-a-portion-of-data-by-a-condition-in-altair-chart
+        bars = base.mark_bar().transform_aggregate(
+            count='count()',
+            groupby=['ticker']
+        ).encode(
             x=alt.X('ticker',
-                    sort=alt.EncodingSortField(
-                        field="ticker", op="count", order='descending'),
+                    # https://altair-viz.github.io/gallery/bar_chart_sorted.html
+                    sort="-y",
                     axis=alt.Axis(title='Stock Tickers')
                     ),
-            y=alt.Y("count(id)",
-                    axis=alt.Axis(title='Number of Mentions')
+            y=alt.Y("count:Q",
+                    axis=alt.Axis(title='Number of Mentions'),
+                    # scale=alt.Scale(zero=False)
                     ),
             color=alt.condition(selector, 'id:O', alt.value(
                 'lightgray'), legend=None),
+            tooltip=['ticker', 'count:Q'],
         ).properties(
+            # title="Stock Ticker mentions on r/wallstreetbets",
             width=1400,
             height=600
+        ).transform_filter(
+            (alt.datum.count <= select_max_count.count) & (
+                alt.datum.count >= select_min_count.count)
         )
 
         # base chart for data tables
@@ -214,7 +244,7 @@ class StockTicker(ModelBase):
         ).transform_window(
             rank='rank(row_number)'
         ).transform_filter(
-            # only shows up to 20
+            # only shows up to 20 rows
             alt.datum.rank < 20
         ).properties(
             width=100,
@@ -222,30 +252,16 @@ class StockTicker(ModelBase):
         )
 
         # Data Tables
-        created = ranked_text.encode(
-            text='date_str'
-        ).properties(
-            title='Created Date',
-        )
-        ticker = ranked_text.encode(
-            text='ticker'
-        ).properties(
-            title='Stock Ticker',
-        )
-        score = ranked_text.encode(text='score'
-                                   ).properties(
-            title='Upvotes',
-        )
-        title = ranked_text.encode(text='title'
-                                   ).properties(
-            title='Submission Title',
-        )
+        created = ranked_text.encode(text='date_str').properties(title='Created Date')
+        ticker = ranked_text.encode(text='ticker').properties(title='Stock Ticker')
+        score = ranked_text.encode(text='score').properties(title='Upvotes')
+        title = ranked_text.encode(text='title').properties(title='Submission Title')
         # url = ranked_text.encode(text='built_url').properties(title='URL')
 
         # Combine data tables
         text = alt.hconcat(created, ticker, score, title)
 
-        # Build chart
+        # Build final chart
         chart = alt.vconcat(
             bars,
             text,
@@ -259,19 +275,23 @@ class StockTicker(ModelBase):
             f.write(self.chart_template.render(
                 vega_version=alt.VEGA_VERSION,
                 vegalite_version=alt.VEGALITE_VERSION,
-                vegaembed_version=alt.VEGAEMBED_VERSION,
-                StockTicker=str(chart.to_json(indent=None))
+                # vegaembed_version=alt.VEGAEMBED_VERSION,  # hard coding for latest version in html
+                StockTicker=chart.to_json(indent=None)
             ))
         return
 
     def clean(self, df):
         """clean ticker rows that are empty
         """
+        # df['ticker'] = df['ticker'].str.strip()
         df = df.drop_duplicates(subset=['id', 'ticker'])
-        return df[df['ticker'].str.strip().astype(bool)]
+        # https://stackoverflow.com/questions/29314033/drop-rows-containing-empty-cells-from-a-pandas-dataframe
+        df = df[df['ticker'].str.strip().astype(bool)]
+        return df.dropna()
 
     def model(self, df):
-        """unused. aggregates and counts
+        """UNUSED. groupby agg count then unstack category title/submission
+        was mainly for charting with python-highchart but that lib sucks
         """
         return self.clean(
             df.groupby(["ticker", "title/submission"])["ticker"].count()
@@ -279,13 +299,20 @@ class StockTicker(ModelBase):
         )
 
     def transform(self, df):
+        """need to explode the ticker columns because they are list type
+        separate title vs submission, drop dups per df, then concat
+
+        we don't drop dup at the end, in case we want to keep the category separation
+        """
         df = self.explode(df, self.ticker_cols)
 
         main_cols = ["id", "title", "permalink",
                      "built_url", "score", "created"]
 
         title_df = df[[*main_cols, "title_ticker"]
-                      ].drop_duplicates(subset=['id', 'title_ticker'])
+                      ].drop_duplicates(
+                          subset=['id', 'title_ticker']
+        )
         title_df["title/submission"] = "title"
         title_df = title_df.rename({"title_ticker": "ticker"}, axis=1)
 
@@ -300,6 +327,30 @@ class StockTicker(ModelBase):
         plot_df = pd.concat([title_df, submission_df], ignore_index=True)
         return self.filter_count(plot_df, "ticker", 1)
 
+    def clean_curated(self, df=None):
+        """altair seems to fuck up even after you filter the bad tickers
+        just going to filter and overwrite the curated file
+        """
+        if df is not None:
+            overwrite = False
+        else:
+            overwrite = True
+            df = self.read_curated()
+
+        # https://stackoverflow.com/questions/61035426/pandas-column-containing-lists-iterate-through-each-list-problem
+        df['title_ticker'] = df['title_ticker'].apply(
+            lambda x: self.clean_ticker_row(x)
+        )
+
+        df['submission_text_ticker'] = df['submission_text_ticker'].apply(
+            lambda x:  self.clean_ticker_row(x)
+        )
+
+        if overwrite:
+            self.save(df, overwrite=overwrite)
+
+        return df
+
     def tendies(self):
         """main method
         """
@@ -312,8 +363,11 @@ class StockTicker(ModelBase):
         df = pd.concat(all_dfs, ignore_index=True).drop_duplicates(
             subset=['id'])
         df = self.extract_tickers(df)
+        df = self.clean_curated(df)
         self.save(df)
 
+        # do it twice just in case
+        self.clean_curated()
         # self.plot_tickers(df)  # basic jpg. we're using highchart for python
         self.chart()
         return

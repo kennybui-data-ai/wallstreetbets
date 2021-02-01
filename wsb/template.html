@@ -3,24 +3,26 @@
 <head>
   <script src="https://cdn.jsdelivr.net/npm/vega@{{ vega_version }}"></script>
   <script src="https://cdn.jsdelivr.net/npm/vega-lite@{{ vegalite_version }}"></script>
-  <script src="https://cdn.jsdelivr.net/npm/vega-embed@{{ vegaembed_version }}"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vega-embed@6.15.1"></script>
 </head>
 <body>
   <Title>money printer go brrrrrrrrrrrr</Title>
   <img src="img/jpow.gif" alt="jpow gif" />
   <h1>💎👐🚀🌙</h1>
-    <p>We're using PRAW :)
-      <br>
+    <p>We're using PRAW :)<br>
       Checkout the charts:
-      <div id="vis1"></div>
-      <div id="vis2"></div>
-      <div id="vis3"></div>
+      <h2>Stock Ticker mentions on r/wallstreetbets</h2>
+      <div id="vis1"></div><br>
+      <h2>Top Due Diligence (DD)</h2>
+      <div id="vis2"></div><br>
+      <h2>Stock Tickers in Daily Discussion comments</h2>
+      <div id="vis3"></div><br>
     </p>
     <img src="img/brrr.gif" alt="money printer go brr gif" />
     <script type="text/javascript">
-    // remember to copy {"loader": {"target": "_blank"}} to the other charts once you are ready to render them
+    // , {"loader": {"target": "_blank"}} in opt argument of vegaEmbed
     // this allows links to open in new tab
-      vegaEmbed('#vis1', {{ StockTicker }}, {"loader": {"target": "_blank"}}).catch(console.error);
+      vegaEmbed('#vis1', {{ StockTicker }}).catch(console.error);
       vegaEmbed('#vis2', {{ DueDiligence }}).catch(console.error);
       vegaEmbed('#vis3', {{ DailyDiscussion }}).catch(console.error);
     </script>
@@ -44,13 +46,11 @@
 
       form.vega-bindings {
         position: absolute;
-        /* left: 0px; */
-        display: flex;
+        /* display: flex;
         justify-content: center;
-        align-items: center;
+        align-items: center; */
         top: 0px;
-        left: 4%;
-        /* margin-right: -50%; */
+        right: 2.5%;
         background-color: black;
       }
     </style>

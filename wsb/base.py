@@ -53,32 +53,36 @@ class ModelBase:
         self.nasdaq_ticker_df = pd.read_csv(self.nasdaq_ticker_path)
         self.nasdaq_tickers = self.nasdaq_ticker_df["Symbol"].tolist()
 
-        self.words = ["A", "AF", "ALL", "ALLY", "AM", "AN", "ANY", "AT", "ARE",
-                      "AWAY", "ACAT", "AG", "AGO", "AVG", "ADX",
-                      "B", "BABY", "BIG", "BLUE",
-                      "C", "CALL", "CEO", "CASH",
-                      "D", "DM", "DO", "DD",
-                      "E", "ELON", "EOD", "EV", "ELSE",
-                      "F", "FI", "FLY", "FOR", "FUEL", "FREE", "FULL", "FUND",
-                      "G", "GAIN", "GAME", "GF", "GMT", "GOOD", "GS", "GOLD",
-                      "H", "HAS", "HE", "HEAR", "HERO", "HF", "HOT",
-                      "I", "IM", "ING", "IT", "ITT", "III", "IRS",
-                      "K",
-                      "L", "LINE", "LIVE", "LL", "LONG", "LOOK", "LOW",
-                      "M", "MM", "MORE", "MY", "MAN",
-                      "N", "NEWS", "NICE", "NOW",
-                      "O", "ONE", "OUT", "OMG",
-                      "P", "PM", "POST", "PSA", "PT", "PE", "PER", "PAY",
-                      "Q",
-                      "R", "RH", "RE",
-                      "S", "SC", "SHIP", "SO", "STAY", "SEE", "SAVE", "SD",
-                      "SOL",
-                      "T", "TD", "TDA", "TIME", "TOO", "TV", "TA",
-                      "USA",
-                      "WIN",
-                      "X",
-                      "Y",
-                      "Z",
+        self.words = [
+            "",
+            "A", "AF", "ALL", "ALLY", "AM", "AN", "ANY", "AT", "ARE", "AWAY", "ACAT",
+            "AG", "AGO", "AVG", "ADX", "AI", "AA", "ADHD", "ACT", "ACH",
+            "B", "BABY", "BIG", "BLUE", "BOOM",
+            "C", "CALL", "CEO", "CASH", "CUZ", "CAP",
+            "D", "DM", "DO", "DD", "DATA", "DE",
+            "E", "ELON", "EOD", "EV", "ELSE", "EXP", "EVER", "EAT",
+            "F", "FI", "FLY", "FOR", "FUEL", "FREE", "FULL", "FUND", "FCF", "FT",
+            "G", "GAIN", "GAME", "GF", "GMT", "GOOD", "GS", "GOLD", "GDP",
+            "H", "HAS", "HE", "HEAR", "HERO", "HF", "HOT",
+            "I", "IM", "ING", "IT", "ITT", "III", "IRS", "IBKR", "IP", "IRL", "ICE",
+            "JPM",
+            "K",
+            "L", "LINE", "LIVE", "LL", "LONG", "LOOK", "LOW", "LOAN",
+            "M", "MM", "MORE", "MY", "MAN", "MAC", "MSM", "MC",
+            "N", "NEWS", "NICE", "NOW", "NAME",
+            "O", "ONE", "OUT", "OMG", "OI", "OCC",
+            "P", "PM", "POST", "PSA", "PT", "PE", "PER", "PAY", "PPS",
+            "Q",
+            "R", "RH", "RE", "RBC", "RATE", "RNA",
+            "S", "SC", "SHIP", "SO", "STAY", "SEE", "SAVE", "SD", "SA", "SP",
+            "SOL", "SAM",
+            "T", "TD", "TDA", "TIME", "TOO", "TV", "TA", "TWO", "TRUE", "TX", "TYPE",
+            "USA",
+            "V",
+            "W", "WIN",
+            "X", "XRS",
+            "Y",
+            "Z",
         ]
 
         self.tickers = [x for x in self.nyse_tickers +
@@ -225,29 +229,29 @@ class ModelBase:
         :param new: pandas df:
         :type new: obj
         """
-        df = old.append(new.set_index("id"))\
-            .sort_values(['last_updated', 'score'], ascending=False)\
-            .groupby(level=0).last()
+        df = old.append(new.set_index("id")
+                        ).sort_values(
+            ['last_updated', 'score'],
+            ascending=False
+        ).groupby(level=0).last()
         return df
 
-    def save(self, df):
+    def save(self, df, overwrite=False):
         """save new df to existing file
 
         :param df: dataframe
         :type df: pandas dataframe obj
+        :param overwrite: option to set overwrite
+        :type overwrite: bool
         """
         old_df = None
         # try catch for first time run. ie - curated file does not exist
         try:
-            parse_dates = ["created", "last_updated"]
-            old_df = pd.read_csv(self.curated_output,
-                                 parse_dates=parse_dates,
-                                 sep=self.delim)\
-                .set_index("id")
+            old_df = self.read_curated().set_index("id")
         except Exception as err:
             print(str(err))
 
-        if old_df is not None:
+        if old_df is not None and not overwrite:
             df = self.merge(
                 old=old_df,
                 new=df
@@ -301,6 +305,8 @@ class ModelBase:
         return df[df.groupby(col)[col].transform('count') > min]
 
     def plot_tickers(self, df):
+        """this creates a jpg using matplotlib / pandas plot
+        """
         title_df = df[["id", "title", "built_url", "title_ticker"]
                       ].drop_duplicates(subset=['id', 'title_ticker'])
         title_df["title/submission"] = "title"
@@ -328,3 +334,21 @@ class ModelBase:
 
     def convert_list(self, x):
         return x.strip("[]").split(", ")
+
+    def clean_ticker_row(self, row):
+        return [i.replace("'", "").replace('"', "").strip() for i in row
+                if i.replace("'", "").replace('"', "").strip() not in self.words]
+
+    def read_curated(self):
+        parse_dates = ["created", "last_updated"]
+        df = pd.read_csv(
+            self.curated_output,
+            sep=self.delim,
+            parse_dates=parse_dates,
+            converters={
+                "title_ticker": lambda x: self.convert_list(x),
+                "submission_text_ticker": lambda x: self.convert_list(x)
+            }
+        )
+
+        return df
