@@ -90,10 +90,11 @@ def parse_args():
     parser.add_argument('--all', action='store_true', help='Runs all models. Overrides the model flags. Default is False')
     parser.add_argument('-st', '--stockticker', action='store_true', dest="StockTicker",
                         help='Stock Ticker search. Default is False')
-    parser.add_argument('-d', '--dailydiscussion', action='store_true', dest="DailyDiscussion",
-                        help='Daily Discussion flair. Default is False')
     parser.add_argument('-dd', '--duediligence', action='store_true', dest="DueDiligence",
                         help='Due Diligence flair. Default is False')
+    parser.add_argument('-d', '--dailydiscussion', action='store_true', dest="DailyDiscussion",
+                        help='Daily Discussion flair. Default is False')
+
     # parser.add_argument('--fresh', action='store_true',
     #                     help='Regenerate (ie - delete and create) fresh 3_output scripts. Default is False')
     # parser.add_argument('--sum', dest='accumulate', action='store_const',

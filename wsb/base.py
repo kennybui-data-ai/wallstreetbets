@@ -572,9 +572,11 @@ class ModelBase:
             url=alt.datum.built_url
         ).mark_text(
             align='left',
-            dx=-45,
-            dy=0,
-            color="white"
+            dx=-12,
+            # dy=0,
+            color="white",
+            strokeWidth=0,
+            strokeOpacity=0,
         ).encode(
             y=alt.Y('row_number:O', axis=None),
             href='url:N',
@@ -596,7 +598,7 @@ class ModelBase:
             # only shows up to 20 rows
             alt.datum.rank < 20
         ).properties(
-            width=100,
+            width=30,
             height=300
         )
 
