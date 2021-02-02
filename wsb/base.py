@@ -177,13 +177,17 @@ class ModelBase:
         :param comments: include comments, optional
         :type comments: bool
         """
-        no_print_attributes = {"nyse_tickers", "nyse_ticker_df",
-                               "nasdaq_tickers", "nasdaq_ticker_df",
-                               "tickers", "words",
-                               }
-        pp.pprint(["{}: {}".format(a, getattr(self, a)) for a in vars(self)
-                   if a not in no_print_attributes]
-                  )
+        pp.pprint(
+            {
+                "subreddit": self.subreddit.display_name,
+                "timefilter": self.timefilter,
+                "limit": self.limit,
+                "sort": self.sort,
+                "search_query": self.search_query,
+                "cols_with_ticker": self.cols_with_ticker,
+                "ticker_cols": self.ticker_cols,
+            }
+        )
 
         # https://praw.readthedocs.io/en/latest/code_overview/models/subreddit.html?highlight=subreddit#praw.models.Subreddit.search
         search_kwargs = {
@@ -196,7 +200,7 @@ class ModelBase:
             search_kwargs["sort"] = sort
             search_kwargs["query"] = self.search_query
         else:
-            # use the other methods: hot, top, new
+            # use the other methods: hot, top, new, controversial
             search = getattr(self.subreddit, sort)
             if sort in ["new", "hot"]:
                 search_kwargs.pop("time_filter")
@@ -206,6 +210,7 @@ class ModelBase:
             # https://praw.readthedocs.io/en/latest/code_overview/models/submission.html#praw.models.Submission
             if comments:
                 # https://praw.readthedocs.io/en/latest/tutorials/comments.html
+                print("====================")
                 print("getting comments")
 
                 # https://praw.readthedocs.io/en/latest/tutorials/comments.html#the-replace-more-method

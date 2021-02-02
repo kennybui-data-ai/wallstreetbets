@@ -26,7 +26,13 @@ class DueDiligence(ModelBase):
     def tendies(self):
         """main method
         """
-        print("Due Diligence")
+        print("""
+   ___             ___  _ ___                      
+  / _ \__ _____   / _ \(_) (_)__ ____ ___  _______ 
+ / // / // / -_) / // / / / / _ `/ -_) _ \/ __/ -_)
+/____/\_,_/\__/ /____/_/_/_/\_, /\__/_//_/\__/\__/ 
+                           /___/                   
+        """)
         df = self.submissions()
 
         self.model(df)
@@ -54,7 +60,13 @@ class DailyDiscussion(ModelBase):
     def tendies(self):
         """main method
         """
-        print("Daily Discussion")
+        print("""
+   ___       _ __       ___  _                      _         
+  / _ \___ _(_) /_ __  / _ \(_)__ ______ _____ ___ (_)__  ___ 
+ / // / _ `/ / / // / / // / (_-</ __/ // (_-<(_-</ / _ \/ _ \\
+/____/\_,_/_/_/\_, / /____/_/___/\__/\_,_/___/___/_/\___/_//_/
+              /___/                                           
+        """)
         df = self.submissions(comments=True)
 
         self.model(df)
@@ -81,7 +93,13 @@ class StockTicker(ModelBase):
     def tendies(self):
         """main method
         """
-        print("Stock Ticker")
+        print("""
+   ______           __     _______     __          
+  / __/ /____  ____/ /__  /_  __(_)___/ /_____ ____
+ _\ \/ __/ _ \/ __/  '_/   / / / / __/  '_/ -_) __/
+/___/\__/\___/\__/_/\_\   /_/ /_/\__/_/\_\\__/_/   
+                                                   
+        """)
         all_dfs = []
         for sort in ["hot", "top", "new", "controversial"]:
             df = self.submissions(sort=sort)

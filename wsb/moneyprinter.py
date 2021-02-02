@@ -1,10 +1,9 @@
 import praw
-# import sys
 import models
 import argparse
-# from datetime import datetime
 import json
 from timeit import default_timer as timer
+import humanize
 
 
 class MoneyPrinter:
@@ -38,8 +37,19 @@ class MoneyPrinter:
     def pump(self):
         """test
         """
+        print("""
+Welcome to
+              /$$                       /$$ /$$             /$$                                     /$$     /$$                   /$$             
+             /$$/                      | $$| $$            | $$                                    | $$    | $$                  | $$             
+  /$$$$$$   /$$//$$  /$$  /$$  /$$$$$$ | $$| $$  /$$$$$$$ /$$$$$$    /$$$$$$   /$$$$$$   /$$$$$$  /$$$$$$  | $$$$$$$   /$$$$$$  /$$$$$$   /$$$$$$$
+ /$$__  $$ /$$/| $$ | $$ | $$ |____  $$| $$| $$ /$$_____/|_  $$_/   /$$__  $$ /$$__  $$ /$$__  $$|_  $$_/  | $$__  $$ /$$__  $$|_  $$_/  /$$_____/
+| $$  \__//$$/ | $$ | $$ | $$  /$$$$$$$| $$| $$|  $$$$$$   | $$    | $$  \__/| $$$$$$$$| $$$$$$$$  | $$    | $$  \ $$| $$$$$$$$  | $$   |  $$$$$$ 
+| $$     /$$/  | $$ | $$ | $$ /$$__  $$| $$| $$ \____  $$  | $$ /$$| $$      | $$_____/| $$_____/  | $$ /$$| $$  | $$| $$_____/  | $$ /$$\____  $$
+| $$    /$$/   |  $$$$$/$$$$/|  $$$$$$$| $$| $$ /$$$$$$$/  |  $$$$/| $$      |  $$$$$$$|  $$$$$$$  |  $$$$/| $$$$$$$/|  $$$$$$$  |  $$$$//$$$$$$$/
+|__/   |__/     \_____/\___/  \_______/|__/|__/|_______/    \___/  |__/       \_______/ \_______/   \___/  |_______/  \_______/   \___/ |_______/   version 0.0.1
+    """)
         # print(self.subreddit.display_name)
-        print(self.subreddit.title)
+        # print(self.subreddit.title)
         # print(self.subreddit.description)
         # for submission in self.subreddit.hot(limit=10):
         #     print("####################")
@@ -114,4 +124,5 @@ if __name__ == "__main__":
         print("[CTRL+C detected]")
     finally:
         end = timer()
-        print("Total execution time:", end - start, "seconds")
+
+        print("Total execution time:", humanize.naturaldelta(end-start))
