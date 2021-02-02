@@ -1,6 +1,6 @@
 # wallstreetbets <a href="https://brrr.money/"><img src="./img/moneyprinter.gif" width="25" height="25" /></a>  
 only💎👐allowed🚀🌙  
-<a href="https://kennybui-data-ai.github.io/wallstreetbets/" target="_blank">https://kennybui-data-ai.github.io/wallstreetbets/</a>
+https://kennybui-data-ai.github.io/wallstreetbets/
 
     .
     ├── wsb                           # main scripts
