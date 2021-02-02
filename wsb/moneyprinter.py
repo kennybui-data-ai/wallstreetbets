@@ -29,9 +29,11 @@ class MoneyPrinter:
         self.output = args.output
         self.limit = args.limit
 
-        not_models = {"timefilter", "output", "credentials", "limit"}
-        self.modelnames = [a for a in vars(
-            args) if a not in not_models and getattr(args, a)]
+        not_models = {"timefilter", "output", "credentials", "limit", "all"}
+        if args.all:
+            self.modelnames = [a for a in vars(args) if a not in not_models]
+        else:
+            self.modelnames = [a for a in vars(args) if a not in not_models and getattr(args, a)]
 
     def pump(self):
         """test
@@ -85,6 +87,7 @@ def parse_args():
                         help='output folder for model. Default is ../output')
 
     # enable models.py
+    parser.add_argument('--all', action='store_true', help='Runs all models. Overrides the model flags. Default is False')
     parser.add_argument('-st', '--stockticker', action='store_true', dest="StockTicker",
                         help='Stock Ticker search. Default is False')
     parser.add_argument('-d', '--dailydiscussion', action='store_true', dest="DailyDiscussion",
@@ -102,11 +105,12 @@ def parse_args():
 
 if __name__ == "__main__":
     start = timer()
-
     args = parse_args()
-
     mp = MoneyPrinter(args)
-    mp.go_brrr()
-
-    end = timer()
-    print("Total execution time:", end - start, "seconds")
+    try:
+        mp.go_brrr()
+    except KeyboardInterrupt:
+        print("[CTRL+C detected]")
+    finally:
+        end = timer()
+        print("Total execution time:", end - start, "seconds")

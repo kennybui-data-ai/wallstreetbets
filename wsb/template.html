@@ -12,20 +12,19 @@
   <img src="img/jpow.gif" alt="jpow gif" />
   <h1>💎👐🚀🌙 Last Updated: {{ last_updated }}</h1>
   <h3><i>obligatory this is not financial advice</i></h3>
-  <p>
-    Do your research. You can start with
+  <p>Do your research. You can start with
     <a href="https://www.barchart.com/options/most-active/stocks" target="_blank">this chart for stock activity</a>
     (order by <i>Options Vol</i> column).
   </p>
-  <p>
-    Many thanks and blessings to:
+  <p>Many thanks and blessings to:
   <ul>
-    <li><a href="https://www.reddit.com/r/wallstreetbets/" target="_blank">r/wallstreetbets ❤️</a></li>
+    <li><a href="https://www.reddit.com/r/wallstreetbets/" target="_blank">r/wallstreetbets</a> ❤️</li>
     <li><a href="https://praw.readthedocs.io/en/latest/index.html" target="_blank">PRAW</a></li>
     <li><a href="https://pandas.pydata.org/docs/reference/index.html#api" target="_blank">Pandas</a></li>
     <li><a href="https://altair-viz.github.io/index.html" target="_blank">Altair</a></li>
     <li><a href="https://github.com/vega/vega-embed" target="_blank">vega-embed</a></li>
   </ul>
+  <i>Note: Clicking on bars will filter the tables. Each row in the table is linked to the submission/comment. Just click on the row to open.</i>
   </p>
   <hr>
   <p>
@@ -40,7 +39,7 @@
   <hr>
   <p>
   <h1>Stock Tickers mentions in Daily Discussion comments</h1>
-  <div id="vis3"></div><br><br>
+  <div id="vis3"></div>
   </p>
   <hr>
   <img src="img/brrr.gif" alt="money printer go brr gif" />
@@ -56,6 +55,10 @@
       color: whitesmoke;
       background-color: #000000;
       font-family: "Courier New", monospace;
+    }
+
+    h3 {
+      color: lightgreen
     }
 
     a:link,
@@ -74,12 +77,13 @@
 
     form.vega-bindings {
       position: absolute;
-      /* display: flex;
-        justify-content: center;
-        align-items: center; */
       top: 0px;
       right: 2.5%;
-      background-color: black;
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      width: 180px;
+      background-color: #000033;
     }
   </style>
 </body>

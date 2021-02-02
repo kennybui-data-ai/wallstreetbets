@@ -8,10 +8,11 @@ from pathlib import Path
 from matplotlib import pyplot as plt
 from jinja2 import Template
 import altair as alt
+from ast import literal_eval
 
 # use with caution:
 # https://altair-viz.github.io/user_guide/faq.html#maxrowserror-how-can-i-plot-large-datasets
-# alt.data_transformers.disable_max_rows()
+alt.data_transformers.disable_max_rows()
 
 # https://github.com/altair-viz/altair/issues/742
 # alt.renderers.set_embed_options(theme='dark')  # only for jupyter
@@ -50,7 +51,8 @@ class ModelBase:
     """
 
     def __init__(self, subreddit, timefilter, limit, output,
-                 sort="hot", search_query=None):
+                 sort="hot", search_query=None,
+                 cols_with_ticker=["title", "submission_text"]):
         """init
 
         :param subreddit: subreddit client
@@ -66,6 +68,8 @@ class ModelBase:
         :type sort: str
         :param search_query: search in subreddit
         :type search_query: str
+        :param cols_with_ticker: columns with ticker. used for explode, extract, clean
+        :type cols_with_ticker: list
         """
         self.subreddit = subreddit
         self.timefilter = timefilter
@@ -90,10 +94,11 @@ class ModelBase:
             "A", "AF", "ALL", "ALLY", "AM", "AN", "ANY", "AT", "ARE", "AWAY", "ACAT",
             "AG", "AGO", "AVG", "ADX", "AI", "AA", "ADHD", "ACT", "ACH",
             "B", "BABY", "BIG", "BLUE", "BOOM",
-            "C", "CALL", "CEO", "CASH", "CUZ", "CAP",
+            "C", "CALL", "CEO", "CASH", "CUZ", "CAP", "CA",
             "D", "DM", "DO", "DD", "DATA", "DE",
-            "E", "ELON", "EOD", "EV", "ELSE", "EXP", "EVER", "EAT",
-            "F", "FI", "FLY", "FOR", "FUEL", "FREE", "FULL", "FUND", "FCF", "FT",
+            "E", "ELON", "EOD", "EV", "ELSE", "EXP", "EVER", "EAT", "EYES",
+            # "F",  # this is Ford
+            "FI", "FLY", "FOR", "FUEL", "FREE", "FULL", "FUND", "FCF", "FT",
             "G", "GAIN", "GAME", "GF", "GMT", "GOOD", "GS", "GOLD", "GDP",
             "H", "HAS", "HE", "HEAR", "HERO", "HF", "HOT",
             "I", "IM", "ING", "IT", "ITT", "III", "IRS", "IBKR", "IP", "IRL", "ICE",
@@ -105,7 +110,8 @@ class ModelBase:
             "O", "ONE", "OUT", "OMG", "OI", "OCC",
             "P", "PM", "POST", "PSA", "PT", "PE", "PER", "PAY", "PPS",
             "Q",
-            "R", "RH", "RE", "RBC", "RATE", "RNA",
+            "R", "RE", "RBC", "RATE", "RNA",
+            # "RH",  # this is Robinhood trading app
             "S", "SC", "SHIP", "SO", "STAY", "SEE", "SAVE", "SD", "SA", "SP",
             "SOL", "SAM",
             "T", "TD", "TDA", "TIME", "TOO", "TV", "TA", "TWO", "TRUE", "TX", "TYPE",
@@ -119,7 +125,8 @@ class ModelBase:
 
         self.tickers = [x for x in self.nyse_tickers +
                         self.nasdaq_tickers if x not in set(self.words)]
-        self.ticker_cols = ["title_ticker", "submission_text_ticker"]
+        self.cols_with_ticker = list(cols_with_ticker)
+        self.ticker_cols = [f"{col}_ticker" for col in self.cols_with_ticker]
 
         self.datetime_now = dt.now()
         self.date_folder = self.datetime_now.strftime("%Y/%m/%d")
@@ -145,7 +152,7 @@ class ModelBase:
     def raw_output(self):
         file_prefix = self._get_name()
         if self.search_query:
-            file_prefix += "_" + self.search_query.replace(":", "_")
+            file_prefix += "_" + self.search_query.replace(":", "_").replace('"', "")
 
         folder = f"{self._output}/raw/{self.date_folder}"
         self._make_dir(folder)
@@ -197,41 +204,64 @@ class ModelBase:
         data = []
         for submission in search(**search_kwargs):
             # https://praw.readthedocs.io/en/latest/code_overview/models/submission.html#praw.models.Submission
-            row = {
-                "id": submission.id,
-                "title": submission.title,
-                "name": submission.name,
-                "upvote_ratio": submission.upvote_ratio,
-                "ups": submission.ups,
-                "score": submission.score,
-                "sort": sort,
-                "created": dt.fromtimestamp(submission.created),  # .strftime('%c'),  # epoch
-                "author": submission.author,
-                "num_comments": submission.num_comments,
-                "flair": submission.link_flair_text,
-                "permalink": submission.permalink,
-                "built_url": f"https://www.reddit.com{submission.permalink}",
-                "url": submission.url,
-                "submission_text": submission.selftext,
-                "last_updated": self.datetime_now,
-                "raw_filename": self.raw_output,
-                "model": self._get_name(),
-            }
-
             if comments:
-                # https://praw.readthedocs.io/en/latest/tutorials/comments.html#extracting-comments
-                # TODO post processing, maybe let models take care of that
-                # fyi this takes quite a few seconds
-                # setting limit will iterate through less comments
-                submission.comments.replace_more(limit=None)
-                row["comments"] = [
-                    comment.body for comment in submission.comments.list()]
+                # https://praw.readthedocs.io/en/latest/tutorials/comments.html
+                print("getting comments")
 
-            # for col in vars(submission):
-            #     row[col] = getattr(submission, col)
+                # https://praw.readthedocs.io/en/latest/tutorials/comments.html#the-replace-more-method
+                # replace_more(limit=None) is infinite top level comments.
+                # leave as default 32 cuz it's SUPEERRRR slow.
+                submission.comments.replace_more()
+                max_length = len(submission.comments.list())
+                # i = 1
+                print(f"number of comments in submission: {max_length}")
+                print("extracting comments now")
 
-            # print(row)
-            data.append(row)
+                # submission.comments.list() gives the entire comment forest
+                for comment in submission.comments.list():
+                    # print(f"{i} in {max_length}")
+                    # i += 1
+                    # print(vars(comment))
+                    row = {
+                        "id": comment.id,
+                        "author": comment.author,
+                        # "title": submission.title,
+                        "total_awards_received": comment.total_awards_received,
+                        "downs": comment.downs,
+                        "ups": comment.ups,
+                        "score": comment.score,
+                        "comment": comment.body,
+                        "created": dt.fromtimestamp(comment.created_utc),
+                        "permalink": comment.permalink,
+                        "built_url":  f"https://www.reddit.com{comment.permalink}",
+                        "sort": sort,
+                        "last_updated": self.datetime_now,
+                        "raw_filename": self.raw_output,
+                        "model": self._get_name(),
+                    }
+                    data.append(row)
+            else:
+                row = {
+                    "id": submission.id,
+                    "title": submission.title,
+                    "name": submission.name,
+                    "upvote_ratio": submission.upvote_ratio,
+                    "ups": submission.ups,
+                    "score": submission.score,
+                    "sort": sort,
+                    "created": dt.fromtimestamp(submission.created_utc),  # .strftime('%c'),  # epoch
+                    "author": submission.author,
+                    "num_comments": submission.num_comments,
+                    "flair": submission.link_flair_text,
+                    "permalink": submission.permalink,
+                    "built_url": f"https://www.reddit.com{submission.permalink}",
+                    "url": submission.url,
+                    "submission_text": submission.selftext,
+                    "last_updated": self.datetime_now,
+                    "raw_filename": self.raw_output,
+                    "model": self._get_name(),
+                }
+                data.append(row)
 
         df = pd.DataFrame(data)
         self._raw_save(df)
@@ -265,7 +295,7 @@ class ModelBase:
         return df
 
     def save(self, df, overwrite=False):
-        """save new df to file. merge if file exists
+        """save df to curated file. merge if file exists
 
         :param df: dataframe
         :type df: pandas dataframe obj
@@ -293,20 +323,17 @@ class ModelBase:
         )
         return
 
-    def extract_tickers(self, df, cols=['title', 'submission_text']):
-        """extract tickers from specified columns
+    def extract_tickers(self, df):
+        """extract tickers from columns with ticker
 
         :param df: pandas df
         :type df: obj
-        :param cols: columns to extract. DailyDiscussion will replace this with comments
-        :type cols: list
         """
         # https://stackoverflow.com/questions/57483859/pandas-finding-matchany-between-list-of-strings-and-df-column-valuesas-list
         ticker_pattern = "(\$*[A-Z]{1,5})(?=[\s\.\?\!\,])+"
         # .str.join(', ').replace(r'^\s*$', np.nan, regex=True)
 
-        cols = list(cols)
-        for col in cols:
+        for col in self.cols_with_ticker:
             df[f"{col}_regex"] = df[col].str.findall(ticker_pattern)
             df[f'{col}_ticker'] = [
                 [val.lstrip("$")
@@ -335,65 +362,40 @@ class ModelBase:
         return df[df.groupby(col)[col].transform('count') > min]
 
     def plot_tickers(self, df):
-        """unused. this creates a jpg using matplotlib / pandas plot
+        """UNUSED. this creates a jpg using matplotlib / pandas plot
         """
-        title_df = df[["id", "title", "built_url", "title_ticker"]
-                      ].drop_duplicates(subset=['id', 'title_ticker'])
-        title_df["title/submission"] = "title"
-        title_df = title_df.rename({"title_ticker": "ticker"}, axis=1)
+        plot_df = self.transform(df, min_count=11)
 
-        submission_df = df[["id", "title", "built_url",
-                            "submission_text_ticker"]
-                           ].drop_duplicates(
-                               subset=['id', 'submission_text_ticker'])
-        submission_df["title/submission"] = "submission"
-        submission_df = submission_df.rename(
-            {"submission_text_ticker": "ticker"}, axis=1)
-
-        plot_df = self.filter_count(
-            pd.concat([title_df, submission_df], ignore_index=True),
-            "ticker",
-            11)
-
-        # plot here
-        plot_df.groupby(["ticker", "title/submission"])["ticker"].count()\
-            .unstack('title/submission').fillna(0)\
-            .plot(kind='bar', stacked=True)
+        # agg, unstack and plot
+        self.clean(
+            plot_df.groupby(["ticker", "category"])["ticker"].count()
+            .unstack('category')
+        ).fillna(0).plot(kind='bar', stacked=True)
 
         plt.savefig(self.semantic_output, bbox_inches="tight")
         return
 
-    def convert_list(self, x):
-        """used to properly convert columns to list when reading csv
-        """
-        return x.strip("[]").split(", ")
-
-    def clean_list_row(self, row):
-        return [i.replace("'", "").replace('"', "").strip() for i in row
-                if i.replace("'", "").replace('"', "").strip() not in self.words]
-
     def read_curated(self):
+        converters = {}
+        for col in self.ticker_cols:
+            converters[col] = literal_eval
+
         parse_dates = ["created", "last_updated"]
         df = pd.read_csv(
             self.curated_output,
             sep=self.delim,
             parse_dates=parse_dates,
-            converters={
-                "title_ticker": lambda x: self.convert_list(x),
-                "submission_text_ticker": lambda x: self.convert_list(x)
-            }
+            converters=converters
         )
 
         return df
 
-    def clean_curated(self, df=None, cols=['title_ticker', 'submission_text_ticker']):
+    def clean_curated(self, df=None):
         """altair seems to fuck up even after you filter the bad tickers
         just going to filter and overwrite the curated file
 
         :param df: pandas df
         :type df: obj
-        :param cols: columns to clean. DailyDiscussion will replace this with comment tickers
-        :type cols: list
         """
         if df is not None:
             overwrite = False
@@ -401,11 +403,13 @@ class ModelBase:
             overwrite = True
             df = self.read_curated()
 
-        cols = list(cols)
         # https://stackoverflow.com/questions/61035426/pandas-column-containing-lists-iterate-through-each-list-problem
-        for col in cols:
+        for col in self.ticker_cols:
             df[col] = df[col].apply(
-                lambda x: self.clean_list_row(x)
+                lambda x: [
+                    i.replace("'", "").replace('"', "").strip() for i in x
+                    if i.replace("'", "").replace('"', "").strip() not in self.words
+                ]
             )
 
         if overwrite:
@@ -419,34 +423,28 @@ class ModelBase:
 
         return
 
-    def transform_title_submission(self, df):
+    def transform(self, df, min_count=1):
         """need to explode the ticker columns because they are list type
-        separate title vs submission, drop dups per df, then concat
-
-        we don't drop dup at the end, in case we want to keep the category separation
+        we don't drop duplicates at the end, in case we want to keep the category separation
         """
         df = self.explode(df, self.ticker_cols)
 
-        main_cols = ["id", "title", "permalink",
-                     "built_url", "score", "created"]
+        main_cols = ["id",
+                     "title" if "title" in self.cols_with_ticker else "comment",
+                     "permalink", "built_url", "score", "created"]
 
-        title_df = df[[*main_cols, "title_ticker"]
-                      ].drop_duplicates(
-                          subset=['id', 'title_ticker']
-        )
-        title_df["title/submission"] = "title"
-        title_df = title_df.rename({"title_ticker": "ticker"}, axis=1)
+        all_dfs = []
+        for col in self.ticker_cols:
+            temp_df = df[[*main_cols, col]]\
+                .drop_duplicates(subset=['id', col])
+            temp_df["category"] = col
+            temp_df = temp_df.rename({col: "ticker"}, axis=1)
+            all_dfs.append(temp_df)
 
-        submission_df = df[[*main_cols, "submission_text_ticker"]
-                           ].drop_duplicates(
-            subset=['id', 'submission_text_ticker']
-        )
-        submission_df["title/submission"] = "submission"
-        submission_df = submission_df.rename(
-            {"submission_text_ticker": "ticker"}, axis=1)
+        transformed_df = pd.concat(all_dfs, ignore_index=True)
 
-        plot_df = pd.concat([title_df, submission_df], ignore_index=True)
-        return self.filter_count(plot_df, "ticker", 1)
+        # can filter counts here if you want
+        return self.filter_count(transformed_df, "ticker", min_count)
 
     def clean_ticker(self, df):
         """clean ticker rows that are empty
@@ -457,9 +455,9 @@ class ModelBase:
         df = df[df['ticker'].str.strip().astype(bool)]
         return df.dropna()
 
-    def chart_title_submission(self):
+    def chart(self):
         df = self.clean_ticker(
-            self.transform_title_submission(
+            self.transform(
                 self.read_curated()
             )
         )
@@ -570,7 +568,8 @@ class ModelBase:
         # base chart for data tables
         # href: https://altair-viz.github.io/gallery/scatter_href.html
         ranked_text = base.transform_calculate(
-            url='https://www.reddit.com' + alt.datum.permalink
+            # url='https://www.reddit.com' + alt.datum.permalink
+            url=alt.datum.built_url
         ).mark_text(
             align='left',
             dx=-45,
@@ -605,8 +604,11 @@ class ModelBase:
         created = ranked_text.encode(text='date_str').properties(title='Created Date')
         ticker = ranked_text.encode(text='ticker').properties(title='Stock Ticker')
         score = ranked_text.encode(text='score').properties(title='Upvotes')
-        title = ranked_text.encode(text='title').properties(title='Submission Title')
-        # url = ranked_text.encode(text='built_url').properties(title='URL')
+        title = ranked_text.encode(
+            text="title" if "title" in self.cols_with_ticker else "comment"
+        ).properties(
+            title='Submission Title' if "title" in self.cols_with_ticker else 'Comment'
+        )
 
         # Combine data tables
         text = alt.hconcat(created, ticker, score, title)
@@ -623,6 +625,19 @@ class ModelBase:
         self.save_semantic_chart(chart.to_json(indent=None))
         return
 
+    def model(self, df):
+        df = self.extract_tickers(df)
+        df = self.clean_curated(df)
+        self.save(df)
+
+        # do it twice just in case
+        self.clean_curated()
+
+        # self.plot_tickers(df)  # basic jpg
+        self.chart()
+
+        return
+
 
 class HTMLBase:
     """separate the rendering of index.html from model.
@@ -631,7 +646,7 @@ class HTMLBase:
     """
 
     def __init__(self, output):
-        self.last_updated = dt.now().strftime("%Y-%m-%d %H:%M")
+        self.last_updated = dt.now().strftime("%Y-%m-%d %I:%M %p %Z")
         self._output = output
         self.semantic_folder = f"{self._output}/semantic"
 
