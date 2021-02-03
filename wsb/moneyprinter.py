@@ -76,7 +76,7 @@ Welcome to
             # tendies is main method of model
             model.tendies()
 
-        models.HTML(self.output).tendies()
+        models.HTML().tendies()
 
         print("BRRRRRR")
 

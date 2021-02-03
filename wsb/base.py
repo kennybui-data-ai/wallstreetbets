@@ -656,7 +656,7 @@ class HTMLBase:
     otherwise the html would get overwritten with only a specific model.
     """
 
-    def __init__(self, output):
+    def __init__(self):
         self.last_updated = dt.now().strftime("%Y-%m-%d %I:%M %p %Z")
         # self._output = output
         # self.semantic_folder = f"{self._output}/semantic"
@@ -676,7 +676,7 @@ class HTMLBase:
 
     @staticmethod
     def read_file(filepath):
-        """unused. we just push to github and read from there.
+        """unused for json files. we just push to github and read from there.
         """
         try:
             with open(filepath, "r", encoding="utf-8") as f:
