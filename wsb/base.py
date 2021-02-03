@@ -152,7 +152,8 @@ class ModelBase:
     def raw_output(self):
         file_prefix = self._get_name()
         if self.search_query:
-            file_prefix += "_" + self.search_query.replace(":", "_").replace('"', "")
+            file_prefix += "_" + \
+                self.search_query.replace(":", "_").replace('"', "")
 
         folder = f"{self._output}/raw/{self.date_folder}"
         self._make_dir(folder)
@@ -254,7 +255,8 @@ class ModelBase:
                     "ups": submission.ups,
                     "score": submission.score,
                     "sort": sort,
-                    "created": dt.fromtimestamp(submission.created_utc),  # .strftime('%c'),  # epoch
+                    # .strftime('%c'),  # epoch
+                    "created": dt.fromtimestamp(submission.created_utc),
                     "author": submission.author,
                     "num_comments": submission.num_comments,
                     "flair": submission.link_flair_text,
@@ -608,8 +610,10 @@ class ModelBase:
         )
 
         # Data Tables
-        created = ranked_text.encode(text='date_str').properties(title='Created Date')
-        ticker = ranked_text.encode(text='ticker').properties(title='Stock Ticker')
+        created = ranked_text.encode(
+            text='date_str').properties(title='Created Date')
+        ticker = ranked_text.encode(
+            text='ticker').properties(title='Stock Ticker')
         score = ranked_text.encode(text='score').properties(title='Upvotes')
         title = ranked_text.encode(
             text="title" if "title" in self.cols_with_ticker else "comment"
@@ -654,18 +658,26 @@ class HTMLBase:
 
     def __init__(self, output):
         self.last_updated = dt.now().strftime("%Y-%m-%d %I:%M %p %Z")
-        self._output = output
-        self.semantic_folder = f"{self._output}/semantic"
+        # self._output = output
+        # self.semantic_folder = f"{self._output}/semantic"
+        self.semantic_folder = "output/semantic"
 
-        self.semantic_stock_ticker = self.read_file(f"{self.semantic_folder}/StockTicker.json")
-        self.semantic_due_diligence = self.read_file(f"{self.semantic_folder}/DueDiligence.json")
-        self.semantic_daily_discussion = self.read_file(f"{self.semantic_folder}/DailyDiscussion.json")
+        # self.semantic_stock_ticker = self.read_file(f"{self.semantic_folder}/StockTicker.json")
+        # self.semantic_due_diligence = self.read_file(f"{self.semantic_folder}/DueDiligence.json")
+        # self.semantic_daily_discussion = self.read_file(f"{self.semantic_folder}/DailyDiscussion.json")
+
+        self.base_url = f"https://raw.githubusercontent.com/kennybui-data-ai/wallstreetbets/master/{self.semantic_folder}"
+        self.stock_ticker_url = f"{self.base_url}/StockTicker.json"
+        self.due_diligence_url = f"{self.base_url}/DueDiligence.json"
+        self.daily_discussion_url = f"{self.base_url}/DailyDiscussion.json"
 
         self.html_template = Template(self.read_file("template.html"))
         self.html_output = "../index.html"
 
     @staticmethod
     def read_file(filepath):
+        """unused. we just push to github and read from there.
+        """
         try:
             with open(filepath, "r", encoding="utf-8") as f:
                 return f.read()
@@ -682,9 +694,9 @@ class HTMLBase:
                 vegalite_version=alt.VEGALITE_VERSION,
                 # vegaembed_version=alt.VEGAEMBED_VERSION,
                 vegaembed_version="6.15.1",  # hardcoding version for href _blank fix
-                stock_ticker=self.semantic_stock_ticker,
-                due_diligence=self.semantic_due_diligence,
-                daily_discussion=self.semantic_daily_discussion,
+                stock_ticker_url=self.stock_ticker_url,
+                due_diligence_url=self.due_diligence_url,
+                daily_discussion_url=self.daily_discussion_url,
                 last_updated=self.last_updated
             ))
 

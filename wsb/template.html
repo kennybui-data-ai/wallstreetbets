@@ -5,11 +5,12 @@
   <script src="https://cdn.jsdelivr.net/npm/vega@{{ vega_version }}"></script>
   <script src="https://cdn.jsdelivr.net/npm/vega-lite@{{ vegalite_version }}"></script>
   <script src="https://cdn.jsdelivr.net/npm/vega-embed@{{ vegaembed_version }}"></script>
+  <script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
 </head>
 
 <body>
   <Title>money printer go brrrrrr</Title>
-  <div class="clearfix">
+  <div class="img-div">
     <div class="img-container">
       <img src="img/jpow.gif" alt="jpow gif" style="width:100%">
     </div>
@@ -53,11 +54,18 @@
   <div id="vis3"></div>
   </p>
   <script type="text/javascript">
-    // , {"loader": {"target": "_blank"}} in opt argument of vegaEmbed
-    // this allows links to open in new tab
-    vegaEmbed('#vis1', {{ stock_ticker }}).catch(console.error);
-    vegaEmbed('#vis2', {{ due_diligence }}).catch(console.error);
-    vegaEmbed('#vis3', {{ daily_discussion }}).catch(console.error);
+    $.getJSON({'{{ stock_ticker_url }}'}, function(data) {
+        vegaEmbed('#vis1', data).catch(console.error);
+    });
+    $.getJSON({'{{ due_diligence_url }}'}, function(data) {
+        vegaEmbed('#vis2', data).catch(console.error);
+    });
+    $.getJSON({'{{ daily_discussion_url }}'}, function(data) {
+        vegaEmbed('#vis3', data).catch(console.error);
+    });
+    // vegaEmbed('#vis1', {{ stock_ticker }}).catch(console.error);
+    // vegaEmbed('#vis2', {{ due_diligence }}).catch(console.error);
+    // vegaEmbed('#vis3', {{ daily_discussion }}).catch(console.error);
   </script>
   <style type="text/css">
     body {
@@ -75,7 +83,7 @@
       padding: 5px;
     }
 
-    .clearfix {
+    .img-div {
       display: flex;
     }
 
