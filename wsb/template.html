@@ -54,13 +54,13 @@
   <div id="vis3"></div>
   </p>
   <script type="text/javascript">
-    $.getJSON({'{{ stock_ticker_url }}'}, function(data) {
+    $.getJSON('{{ stock_ticker_url }}', function(data) {
         vegaEmbed('#vis1', data).catch(console.error);
     });
-    $.getJSON({'{{ due_diligence_url }}'}, function(data) {
+    $.getJSON('{{ due_diligence_url }}', function(data) {
         vegaEmbed('#vis2', data).catch(console.error);
     });
-    $.getJSON({'{{ daily_discussion_url }}'}, function(data) {
+    $.getJSON('{{ daily_discussion_url }}', function(data) {
         vegaEmbed('#vis3', data).catch(console.error);
     });
     // vegaEmbed('#vis1', {{ stock_ticker }}).catch(console.error);
